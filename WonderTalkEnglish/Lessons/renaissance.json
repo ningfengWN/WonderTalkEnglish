@@ -1,0 +1,52 @@
+{
+  "id": "renaissance",
+  "category": "HISTORY · B1–B2",
+  "title": "The Italian Renaissance",
+  "subtitle": "Commerce, patronage and classical learning",
+  "sourceName": "WonderTalk English · original educational script",
+  "sourceURL": "",
+  "rightsNote": "Original educational text; accompanying audio is synthetic demo audio, NOT a VOA recording.",
+  "bundledAudioStem": "renaissance",
+  "lines": [
+    {
+      "id": 0,
+      "english": "The Renaissance did not begin with a single event or a single brilliant artist.",
+      "chinese": "文艺复兴并非始于某个单一事件或某位天才艺术家。"
+    },
+    {
+      "id": 1,
+      "english": "It developed gradually in a network of Italian cities, including Florence and Venice.",
+      "chinese": "它逐渐发展于包括佛罗伦萨和威尼斯在内的意大利城市网络之中。"
+    },
+    {
+      "id": 2,
+      "english": "Trade and finance helped some merchant families accumulate substantial wealth.",
+      "chinese": "贸易和金融帮助一些商人家族积累了可观的财富。"
+    },
+    {
+      "id": 3,
+      "english": "These families supported painters, architects and scholars through patronage.",
+      "chinese": "这些家族通过赞助支持画家、建筑师和学者。"
+    },
+    {
+      "id": 4,
+      "english": "Patronage created opportunities, but it also shaped which projects received attention.",
+      "chinese": "赞助创造了机会，但也影响了哪些项目能够获得关注。"
+    },
+    {
+      "id": 5,
+      "english": "Competition between city-states encouraged rulers to display their prestige through art.",
+      "chinese": "城邦之间的竞争促使统治者通过艺术展示自身声望。"
+    },
+    {
+      "id": 6,
+      "english": "At the same time, humanist scholars studied ancient Greek and Roman writing with renewed interest.",
+      "chinese": "与此同时，人文主义学者以新的热情研究古希腊和古罗马著作。"
+    },
+    {
+      "id": 7,
+      "english": "The Renaissance emerged from the interaction of economic, political and intellectual forces.",
+      "chinese": "文艺复兴源于经济、政治和思想力量之间的相互作用。"
+    }
+  ]
+}

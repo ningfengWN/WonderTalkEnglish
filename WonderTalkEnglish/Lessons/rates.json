@@ -1,0 +1,52 @@
+{
+  "id": "rates",
+  "category": "FINANCE · B1–B2",
+  "title": "Why Interest Rates Matter",
+  "subtitle": "Borrowing, valuation and expectations",
+  "sourceName": "WonderTalk English · original educational script",
+  "sourceURL": "",
+  "rightsNote": "Original educational text; accompanying audio is synthetic demo audio, NOT a VOA recording.",
+  "bundledAudioStem": "rates",
+  "lines": [
+    {
+      "id": 0,
+      "english": "When a central bank raises interest rates, borrowing usually becomes more expensive.",
+      "chinese": "当中央银行提高利率时，借贷通常会变得更加昂贵。"
+    },
+    {
+      "id": 1,
+      "english": "Businesses may postpone investment projects, while households may reduce spending.",
+      "chinese": "企业可能推迟投资项目，家庭则可能减少支出。"
+    },
+    {
+      "id": 2,
+      "english": "Higher interest rates can also change the way investors value companies.",
+      "chinese": "更高的利率也可能改变投资者对企业的估值方式。"
+    },
+    {
+      "id": 3,
+      "english": "Analysts often discount future cash flows to estimate what a business is worth today.",
+      "chinese": "分析师通常对未来现金流进行折现，以估计企业今天的价值。"
+    },
+    {
+      "id": 4,
+      "english": "When the discount rate rises, distant cash flows generally become less valuable in today's terms.",
+      "chinese": "当折现率上升时，较远期的现金流以现值计算通常会下降。"
+    },
+    {
+      "id": 5,
+      "english": "This is one reason why fast-growing companies can be sensitive to interest rate changes.",
+      "chinese": "这也是高速成长型公司可能对利率变化较为敏感的原因之一。"
+    },
+    {
+      "id": 6,
+      "english": "However, stock prices also depend on profits, competition, risk and market expectations.",
+      "chinese": "不过，股价还取决于利润、竞争、风险和市场预期。"
+    },
+    {
+      "id": 7,
+      "english": "A thoughtful investor asks not only what changed, but also what the market had already expected.",
+      "chinese": "审慎的投资者不仅关心发生了什么变化，也关心市场此前已经预期了什么。"
+    }
+  ]
+}
