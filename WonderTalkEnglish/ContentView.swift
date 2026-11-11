@@ -24,6 +24,10 @@ private enum StudyStep: Int, CaseIterable {
 }
 
 struct ContentView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var compactPhone: Bool { horizontalSizeClass == .compact }
+
     @StateObject private var courses = CourseStore()
     @StateObject private var audio = AudioStudio()
 
@@ -49,7 +53,7 @@ struct ContentView: View {
         GeometryReader { geometry in
             ZStack {
                 blue.ignoresSafeArea()
-                VStack(spacing: 14) {
+                VStack(spacing: compactPhone ? 8 : 14) {
                     header
                     stepsBar
                     Group {
@@ -67,8 +71,8 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.white, in: RoundedRectangle(cornerRadius: 26))
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 10)
+                    .padding(.horizontal, compactPhone ? 8 : 12)
+                    .padding(.bottom, compactPhone ? 6 : 10)
                 }
                 .frame(maxWidth: 800)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -171,7 +175,7 @@ struct ContentView: View {
             .accessibilityLabel("课程库与导入")
         }
         .padding(.horizontal, 18)
-        .padding(.top, 10)
+        .padding(.top, compactPhone ? 2 : 10)
     }
 
     private var stepsBar: some View {
@@ -182,7 +186,7 @@ struct ContentView: View {
                         Image(systemName: item.symbol)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(item == step ? Color.black : blue)
-                            .frame(width: 38, height: 38)
+                            .frame(width: compactPhone ? 34 : 38, height: compactPhone ? 34 : 38)
                             .background(item == step ? yellow : .white, in: Circle())
                         Text(item.title)
                             .font(.caption2.bold())
@@ -196,58 +200,74 @@ struct ContentView: View {
         .padding(.horizontal, 10)
     }
 
+    // On notched/compact iPhones, keep the entire listening lesson scrollable
+    // rather than allowing fixed spacers to push playback controls off-screen.
     private func listenPage(_ lesson: Lesson) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            heading("01", "Blind Listening", subtitle: "先泛听整篇文章，不看原文，抓住主题和逻辑。", lesson: lesson)
-            Spacer(minLength: 8)
-            VStack(spacing: 18) {
-                Image(systemName: "headphones.circle.fill")
-                    .font(.system(size: 82))
-                    .foregroundStyle(blue)
-                Text(lesson.subtitle)
-                    .font(.title3.weight(.medium))
-                    .multilineTextAlignment(.center)
-                Text("Listen for the main idea, not every word.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            Spacer(minLength: 8)
-            audioProgress
-            HStack(spacing: 28) {
-                Button {
-                    audio.seek(to: max(0, audio.currentTime - 10))
-                } label: { Image(systemName: "gobackward.10").font(.title) }
-                Button {
-                    audio.toggleFull(lesson, mediaDirectory: courses.mediaDirectory,
-                                     speed: Float(speed))
-                } label: {
-                    Image(systemName: audio.isPlaying && audio.currentKey == "full_\(lesson.id)"
-                          ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.black)
-                        .frame(width: 80, height: 80)
-                        .background(yellow, in: Circle())
+        ScrollView {
+            VStack(alignment: .leading, spacing: compactPhone ? 12 : 18) {
+                heading("01", "Blind Listening",
+                        subtitle: "先泛听整篇文章，不看原文，抓住主题和逻辑。",
+                        lesson: lesson)
+
+                VStack(spacing: compactPhone ? 8 : 18) {
+                    Image(systemName: "headphones.circle.fill")
+                        .font(.system(size: compactPhone ? 54 : 82))
+                        .foregroundStyle(blue)
+                    Text(lesson.subtitle)
+                        .font(compactPhone ? .headline : .title3.weight(.medium))
+                        .multilineTextAlignment(.center)
+                    Text("Listen for the main idea, not every word.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
-                Button {
-                    audio.seek(to: audio.currentTime + 10)
-                } label: { Image(systemName: "goforward.10").font(.title) }
-            }
-            .foregroundStyle(blue)
-            .frame(maxWidth: .infinity)
-            speedPicker
-            if lesson.audioFilename == nil && lesson.bundledAudioStem == nil {
-                Button("尚无音频 · 点击导入 MP3") { importingAudio = true }
-                    .buttonStyle(.bordered)
-            }
-            sourceLine(lesson)
-            Button("下一步 · 阅读原文") { step = .read }
-                .buttonStyle(.borderedProminent)
-                .tint(blue)
                 .frame(maxWidth: .infinity)
+                .padding(.vertical, compactPhone ? 4 : 16)
+
+                audioProgress
+
+                HStack(spacing: compactPhone ? 20 : 28) {
+                    Button {
+                        audio.seek(to: max(0, audio.currentTime - 10))
+                    } label: {
+                        Image(systemName: "gobackward.10").font(.title)
+                    }
+                    Button {
+                        audio.toggleFull(lesson, mediaDirectory: courses.mediaDirectory,
+                                         speed: Float(speed))
+                    } label: {
+                        Image(systemName: audio.isPlaying && audio.currentKey == "full_\(lesson.id)"
+                              ? "pause.fill" : "play.fill")
+                            .font(.system(size: compactPhone ? 24 : 28, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: compactPhone ? 64 : 80,
+                                   height: compactPhone ? 64 : 80)
+                            .background(yellow, in: Circle())
+                    }
+                    Button {
+                        audio.seek(to: audio.currentTime + 10)
+                    } label: {
+                        Image(systemName: "goforward.10").font(.title)
+                    }
+                }
+                .foregroundStyle(blue)
+                .frame(maxWidth: .infinity)
+
+                speedPicker
+                if lesson.audioFilename == nil && lesson.bundledAudioStem == nil {
+                    Button("尚无音频 · 点击导入 MP3") { importingAudio = true }
+                        .buttonStyle(.bordered)
+                }
+                sourceLine(lesson)
+                Button("下一步 · 阅读原文") { step = .read }
+                    .buttonStyle(.borderedProminent)
+                    .tint(blue)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(compactPhone ? 16 : 22)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(22)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func readPage(_ lesson: Lesson) -> some View {
@@ -303,13 +323,13 @@ struct ContentView: View {
             .buttonStyle(.borderedProminent)
             .tint(blue)
         }
-        .padding(18)
+        .padding(compactPhone ? 14 : 18)
     }
 
     private func shadowPage(_ lesson: Lesson) -> some View {
         let index = min(sentenceIndex, max(0, lesson.lines.count - 1))
         let line = lesson.lines[index]
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: compactPhone ? 9 : 14) {
             HStack {
                 Text("Sentence \(index + 1)/\(lesson.lines.count)")
                     .font(.subheadline.weight(.medium))
@@ -324,7 +344,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(alignment: .top) {
                         Text(line.english)
-                            .font(.system(size: 27, weight: .bold))
+                            .font(.system(size: compactPhone ? 23 : 27, weight: .bold))
                             .foregroundStyle(Color(red: 0.29, green: 0.41, blue: 0.57))
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 5)
@@ -396,7 +416,8 @@ struct ContentView: View {
                         Image(systemName: audio.isRecording ? "stop.fill" : "mic.fill")
                             .font(.system(size: 34, weight: .bold))
                             .foregroundStyle(.black)
-                            .frame(width: 92, height: 92)
+                            .frame(width: compactPhone ? 72 : 92,
+                                   height: compactPhone ? 72 : 92)
                             .background(audio.isRecording ? Color.red : yellow, in: Circle())
                         Text(audio.isRecording ? "停止录音" : "点击录音")
                             .font(.caption)
@@ -416,7 +437,7 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(20)
+        .padding(compactPhone ? 12 : 20)
     }
 
     private func finishPage(_ lesson: Lesson) -> some View {
@@ -458,7 +479,7 @@ struct ContentView: View {
                 .font(.caption.bold())
                 .foregroundStyle(blue)
             Text(title)
-                .font(.system(size: 26, weight: .semibold, design: .serif))
+                .font(.system(size: compactPhone ? 23 : 26, weight: .semibold, design: .serif))
             Text(subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
