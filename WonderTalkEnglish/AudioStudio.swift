@@ -8,16 +8,16 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published private(set) var isRecording = false
     @Published private(set) var currentTime: TimeInterval = 0
     @Published private(set) var duration: TimeInterval = 0
-    @Published private(set) var currentStem: String?
+    @Published private(set) var currentKey: String?
     @Published var errorMessage: String?
 
     private var player: AVAudioPlayer?
     private var recorder: AVAudioRecorder?
     private var ticker: Timer?
-    private var rate: Float = 1.0
+    private var clipEnd: TimeInterval?
 
-    private func audioURL(_ stem: String) -> URL? {
-        for ext in ["aiff", "m4a", "mp3", "wav"] {
+    private func bundledAudio(_ stem: String) -> URL? {
+        for ext in ["m4a", "mp3", "wav", "aiff", "caf"] {
             if let url = Bundle.main.url(forResource: stem, withExtension: ext, subdirectory: "Audio") {
                 return url
             }
@@ -28,16 +28,68 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         return nil
     }
 
-    func play(_ stem: String, speed: Float = 1.0) {
-        stopPlayback()
-        guard let url = audioURL(stem) else {
-            errorMessage = "找不到音频 \(stem)。请将 Audio 文件夹添加到 App Target。"
-            return
+    private func fullURL(for lesson: Lesson, mediaDirectory: URL) -> URL? {
+        if let filename = lesson.audioFilename {
+            let url = mediaDirectory.appendingPathComponent(filename)
+            if FileManager.default.fileExists(atPath: url.path) { return url }
         }
-        playURL(url, stem: stem, speed: speed)
+        if let stem = lesson.fullAudioStem { return bundledAudio(stem) }
+        return nil
     }
 
-    private func playURL(_ url: URL, stem: String, speed: Float) {
+    func playFull(_ lesson: Lesson, mediaDirectory: URL, speed: Float) {
+        guard let url = fullURL(for: lesson, mediaDirectory: mediaDirectory) else {
+            errorMessage = "这节课程还没有音频。请先通过课程菜单导入真人 MP3。"
+            return
+        }
+        start(url: url, key: "full_\(lesson.id)", speed: speed)
+    }
+
+    func toggleFull(_ lesson: Lesson, mediaDirectory: URL, speed: Float) {
+        let key = "full_\(lesson.id)"
+        if currentKey == key, let player {
+            if isPlaying {
+                player.pause()
+                isPlaying = false
+            } else {
+                if player.currentTime >= player.duration - 0.05 { player.currentTime = 0 }
+                player.enableRate = true
+                player.rate = speed
+                isPlaying = player.play()
+                startTicker()
+            }
+        } else {
+            playFull(lesson, mediaDirectory: mediaDirectory, speed: speed)
+        }
+    }
+
+    func playSentence(_ lesson: Lesson, index: Int, mediaDirectory: URL, speed: Float) {
+        guard lesson.lines.indices.contains(index) else { return }
+        let line = lesson.lines[index]
+        if line.isAligned,
+           let url = fullURL(for: lesson, mediaDirectory: mediaDirectory),
+           let start = line.start, let end = line.end {
+            playClip(url: url, start: start, end: end,
+                     key: "line_\(lesson.id)_\(index)", speed: speed)
+        } else if let stem = lesson.sentenceStem(index),
+                  let url = bundledAudio(stem) {
+            start(url: url, key: "line_\(lesson.id)_\(index)", speed: speed)
+        } else {
+            errorMessage = "本句尚未对齐音频。请在阅读页点击「对齐时间」，标记本句起点和终点。"
+        }
+    }
+
+    private func playClip(url: URL, start: Double, end: Double, key: String, speed: Float) {
+        startPlayback(url: url, key: key, speed: speed, seek: start, clipEnd: end)
+    }
+
+    private func start(url: URL, key: String, speed: Float) {
+        startPlayback(url: url, key: key, speed: speed, seek: 0, clipEnd: nil)
+    }
+
+    private func startPlayback(url: URL, key: String, speed: Float,
+                               seek: Double, clipEnd: Double?) {
+        stopPlayback()
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -47,46 +99,38 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             newPlayer.enableRate = true
             newPlayer.rate = speed
             newPlayer.prepareToPlay()
+            guard seek < newPlayer.duration else {
+                errorMessage = "句子起点超过音频时长，请重新对齐。"
+                return
+            }
+            if let clipEnd, (clipEnd <= seek || clipEnd > newPlayer.duration + 0.1) {
+                errorMessage = "句子终点无效，请重新对齐。"
+                return
+            }
+            newPlayer.currentTime = max(0, seek)
             player = newPlayer
-            currentStem = stem
-            rate = speed
+            self.clipEnd = clipEnd
+            currentKey = key
+            currentTime = newPlayer.currentTime
             duration = newPlayer.duration
-            currentTime = 0
             isPlaying = newPlayer.play()
             startTicker()
             errorMessage = nil
         } catch {
-            errorMessage = "音频播放失败：\(error.localizedDescription)"
+            errorMessage = "播放失败：\(error.localizedDescription)"
         }
     }
 
-    func toggle(_ stem: String, speed: Float) {
-        if currentStem == stem, let player {
-            if isPlaying {
-                player.pause()
-                isPlaying = false
-            } else {
-                if currentTime >= duration - 0.05 { player.currentTime = 0 }
-                player.enableRate = true
-                player.rate = speed
-                isPlaying = player.play()
-                startTicker()
-            }
-        } else {
-            play(stem, speed: speed)
-        }
-    }
-
-    func setSpeed(_ newSpeed: Float) {
-        rate = newSpeed
+    func setSpeed(_ speed: Float) {
         player?.enableRate = true
-        player?.rate = newSpeed
+        player?.rate = speed
     }
 
-    func seek(to time: TimeInterval) {
+    func seek(to seconds: Double) {
         guard let player else { return }
-        player.currentTime = min(max(0, time), player.duration)
+        player.currentTime = min(max(0, seconds), player.duration)
         currentTime = player.currentTime
+        if let clipEnd, player.currentTime >= clipEnd { stopPlayback() }
     }
 
     func stopPlayback() {
@@ -94,25 +138,29 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         ticker = nil
         player?.stop()
         player = nil
+        clipEnd = nil
         isPlaying = false
         currentTime = 0
         duration = 0
-        currentStem = nil
+        currentKey = nil
     }
 
     private func startTicker() {
         ticker?.invalidate()
-        ticker = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { [weak self] _ in
+        ticker = Timer.scheduledTimer(withTimeInterval: 0.06, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 guard let self, let player = self.player else { return }
                 self.currentTime = player.currentTime
+                if let clipEnd = self.clipEnd, player.currentTime >= clipEnd {
+                    self.stopPlayback()
+                }
             }
         }
     }
 
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self, self.player === player else { return }
             self.isPlaying = false
             self.currentTime = self.duration
             self.ticker?.invalidate()
@@ -121,8 +169,8 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func recordingURL(lessonID: String, sentenceIndex: Int) -> URL {
-        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return directory.appendingPathComponent("shadow_\(lessonID)_\(sentenceIndex + 1).m4a")
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("shadow_\(lessonID)_\(sentenceIndex + 1).m4a")
     }
 
     func hasRecording(lessonID: String, sentenceIndex: Int) -> Bool {
@@ -178,11 +226,10 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func playRecording(lessonID: String, sentenceIndex: Int) {
         let url = recordingURL(lessonID: lessonID, sentenceIndex: sentenceIndex)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            errorMessage = "还没有录音，请先点击录音按钮。"
+            errorMessage = "还没有本句录音。"
             return
         }
-        stopPlayback()
-        playURL(url, stem: "my_recording", speed: 1)
+        start(url: url, key: "recording_\(lessonID)_\(sentenceIndex)", speed: 1)
     }
 
     func stopAll() {
