@@ -1,53 +1,172 @@
 import Foundation
+import Combine
 
-struct LessonLine: Identifiable {
-    let id: Int
-    let english: String
-    let chinese: String
+struct LessonLine: Identifiable, Codable, Equatable {
+    var id: Int
+    var english: String
+    var chinese: String
+    var start: Double? = nil
+    var end: Double? = nil
+
+    var isAligned: Bool {
+        guard let start, let end else { return false }
+        return start >= 0 && end > start
+    }
 }
 
-struct Lesson: Identifiable {
-    let id: String
-    let category: String
-    let title: String
-    let subtitle: String
-    let lines: [LessonLine]
+struct Lesson: Identifiable, Codable, Equatable {
+    var id: String
+    var category: String
+    var title: String
+    var subtitle: String
+    var sourceName: String
+    var sourceURL: String
+    var rightsNote: String
+    var audioFilename: String? = nil
+    var bundledAudioStem: String? = nil
+    var lines: [LessonLine]
 
-    var fullAudioStem: String { "\(id)_full" }
-    func sentenceStem(_ index: Int) -> String {
-        "\(id)_\(String(format: "%02d", index + 1))"
+    var isImported: Bool { bundledAudioStem == nil }
+    var fullAudioStem: String? { bundledAudioStem.map { "\($0)_full" } }
+    func sentenceStem(_ index: Int) -> String? {
+        bundledAudioStem.map { "\($0)_\(String(format: "%02d", index + 1))" }
+    }
+}
+
+@MainActor
+final class CourseStore: ObservableObject {
+    @Published private(set) var lessons: [Lesson] = []
+    @Published var errorMessage: String?
+
+    private let manager = FileManager.default
+
+    private var appSupport: URL {
+        let base = manager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let dir = base.appendingPathComponent("WonderTalk", isDirectory: true)
+        try? manager.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
     }
 
-    static let all: [Lesson] = [
-        Lesson(
-            id: "rates", category: "FINANCE · B1–B2",
-            title: "Why Interest Rates Matter",
-            subtitle: "Borrowing, valuation and expectations",
-            lines: [
-                .init(id: 0, english: "When a central bank raises interest rates, borrowing usually becomes more expensive.", chinese: "当中央银行提高利率时，借贷通常会变得更加昂贵。"),
-                .init(id: 1, english: "Businesses may postpone investment projects, while households may reduce spending.", chinese: "企业可能推迟投资项目，家庭则可能减少支出。"),
-                .init(id: 2, english: "Higher interest rates can also change the way investors value companies.", chinese: "更高的利率也可能改变投资者对企业的估值方式。"),
-                .init(id: 3, english: "Analysts often discount future cash flows to estimate what a business is worth today.", chinese: "分析师通常对未来现金流进行折现，以估计企业今天的价值。"),
-                .init(id: 4, english: "When the discount rate rises, distant cash flows generally become less valuable in today's terms.", chinese: "当折现率上升时，较远期的现金流以现值计算通常会下降。"),
-                .init(id: 5, english: "This is one reason why fast-growing companies can be sensitive to interest rate changes.", chinese: "这也是高速成长型公司可能对利率变化较为敏感的原因之一。"),
-                .init(id: 6, english: "However, stock prices also depend on profits, competition, risk and market expectations.", chinese: "不过，股价还取决于利润、竞争、风险和市场预期。"),
-                .init(id: 7, english: "A thoughtful investor asks not only what changed, but also what the market had already expected.", chinese: "审慎的投资者不仅关心发生了什么变化，也关心市场此前已经预期了什么。")
-            ]
-        ),
-        Lesson(
-            id: "renaissance", category: "HISTORY · B1–B2",
-            title: "The Italian Renaissance",
-            subtitle: "Commerce, patronage and classical learning",
-            lines: [
-                .init(id: 0, english: "The Renaissance did not begin with a single event or a single brilliant artist.", chinese: "文艺复兴并非始于某个单一事件或某位天才艺术家。"),
-                .init(id: 1, english: "It developed gradually in a network of Italian cities, including Florence and Venice.", chinese: "它逐渐发展于包括佛罗伦萨和威尼斯在内的意大利城市网络之中。"),
-                .init(id: 2, english: "Trade and finance helped some merchant families accumulate substantial wealth.", chinese: "贸易和金融帮助一些商人家族积累了可观的财富。"),
-                .init(id: 3, english: "These families supported painters, architects and scholars through patronage.", chinese: "这些家族通过赞助支持画家、建筑师和学者。"),
-                .init(id: 4, english: "Patronage created opportunities, but it also shaped which projects received attention.", chinese: "赞助创造了机会，但也影响了哪些项目能够获得关注。"),
-                .init(id: 5, english: "Competition between city-states encouraged rulers to display their prestige through art.", chinese: "城邦之间的竞争促使统治者通过艺术展示自身声望。"),
-                .init(id: 6, english: "At the same time, humanist scholars studied ancient Greek and Roman writing with renewed interest.", chinese: "与此同时，人文主义学者以新的热情研究古希腊和古罗马著作。"),
-                .init(id: 7, english: "The Renaissance emerged from the interaction of economic, political and intellectual forces.", chinese: "文艺复兴源于经济、政治和思想力量之间的相互作用。")
-            ]
-        )
-    ]
+    var mediaDirectory: URL {
+        let dir = appSupport.appendingPathComponent("Media", isDirectory: true)
+        try? manager.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private var catalogURL: URL { appSupport.appendingPathComponent("catalog.json") }
+
+    init() {
+        if let data = try? Data(contentsOf: catalogURL),
+           let saved = try? JSONDecoder().decode([Lesson].self, from: data),
+           !saved.isEmpty {
+            lessons = saved
+        } else {
+            loadBundledLessons()
+            save()
+        }
+    }
+
+    private func loadBundledLessons() {
+        var urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Lessons") ?? []
+        if urls.isEmpty {
+            for name in ["rates", "renaissance"] {
+                if let url = Bundle.main.url(forResource: name, withExtension: "json") {
+                    urls.append(url)
+                }
+            }
+        }
+        lessons = urls.compactMap { url in
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return try? JSONDecoder().decode(Lesson.self, from: data)
+        }.sorted { $0.id < $1.id }
+        if lessons.isEmpty {
+            errorMessage = "没有找到 Lessons 文件夹中的 JSON 课程。请将 Lessons 添加到 App Target。"
+        }
+    }
+
+    func lesson(_ id: String) -> Lesson? {
+        lessons.first(where: { $0.id == id })
+    }
+
+    private func save() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            try encoder.encode(lessons).write(to: catalogURL, options: .atomic)
+        } catch {
+            errorMessage = "保存课程失败：\(error.localizedDescription)"
+        }
+    }
+
+    @discardableResult
+    func addLesson(title: String, category: String, sourceName: String,
+                   sourceURL: String, rightsNote: String, transcript: String) -> String? {
+        let sentences = transcript.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !title.trimmingCharacters(in: .whitespaces).isEmpty,
+              !sentences.isEmpty else {
+            errorMessage = "请填写课程标题，并至少输入一行英文句子。"
+            return nil
+        }
+        let id = UUID().uuidString.lowercased()
+        let lesson = Lesson(id: id, category: category, title: title,
+                            subtitle: "真人音频课程 · \(sentences.count) 句",
+                            sourceName: sourceName, sourceURL: sourceURL,
+                            rightsNote: rightsNote, audioFilename: nil,
+                            bundledAudioStem: nil,
+                            lines: sentences.enumerated().map { index, sentence in
+                                LessonLine(id: index, english: sentence, chinese: "")
+                            })
+        lessons.append(lesson)
+        save()
+        return id
+    }
+
+    func importAudio(from url: URL, for lessonID: String) {
+        guard let index = lessons.firstIndex(where: { $0.id == lessonID }) else { return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        let ext = url.pathExtension.lowercased()
+        guard ["mp3", "m4a", "wav", "aiff", "aif", "caf"].contains(ext) else {
+            errorMessage = "请导入 MP3、M4A、WAV、AIFF 或 CAF 音频。"
+            return
+        }
+        let filename = "lesson_\(lessonID).\(ext)"
+        let destination = mediaDirectory.appendingPathComponent(filename)
+        do {
+            if manager.fileExists(atPath: destination.path) {
+                try manager.removeItem(at: destination)
+            }
+            try manager.copyItem(at: url, to: destination)
+            lessons[index].audioFilename = filename
+            save()
+        } catch {
+            errorMessage = "导入音频失败：\(error.localizedDescription)"
+        }
+    }
+
+    func setBoundary(lessonID: String, lineIndex: Int, isStart: Bool, seconds: Double) {
+        guard let i = lessons.firstIndex(where: { $0.id == lessonID }),
+              lessons[i].lines.indices.contains(lineIndex) else { return }
+        if isStart {
+            lessons[i].lines[lineIndex].start = max(0, seconds)
+        } else {
+            lessons[i].lines[lineIndex].end = max(0, seconds)
+        }
+        save()
+    }
+
+    func updateTranslation(lessonID: String, lineIndex: Int, text: String) {
+        guard let i = lessons.firstIndex(where: { $0.id == lessonID }),
+              lessons[i].lines.indices.contains(lineIndex) else { return }
+        lessons[i].lines[lineIndex].chinese = text
+        save()
+    }
+
+    func resetCatalog() {
+        // Never automatically delete imported audio or recordings.
+        loadBundledLessons()
+        save()
+    }
 }
