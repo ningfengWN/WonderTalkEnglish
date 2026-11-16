@@ -11,6 +11,8 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published private(set) var currentStem: String?
     @Published var errorMessage: String?
 
+    var profileID: String = "adult"
+
     private var player: AVAudioPlayer?
     private var recorder: AVAudioRecorder?
     private var ticker: Timer?
@@ -122,7 +124,16 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func recordingURL(lessonID: String, sentenceIndex: Int) -> URL {
         let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return directory.appendingPathComponent("shadow_\(lessonID)_\(sentenceIndex + 1).m4a")
+        let filename = "shadow_\(profileID)_\(lessonID)_\(sentenceIndex + 1).m4a"
+        let destination = directory.appendingPathComponent(filename)
+        // Keep recordings made before the family-profile update under the adult profile.
+        if profileID == "adult" && !FileManager.default.fileExists(atPath: destination.path) {
+            let legacy = directory.appendingPathComponent("shadow_\(lessonID)_\(sentenceIndex + 1).m4a")
+            if FileManager.default.fileExists(atPath: legacy.path) {
+                try? FileManager.default.copyItem(at: legacy, to: destination)
+            }
+        }
+        return destination
     }
 
     func hasRecording(lessonID: String, sentenceIndex: Int) -> Bool {
