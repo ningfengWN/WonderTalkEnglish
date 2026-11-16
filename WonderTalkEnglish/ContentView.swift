@@ -68,6 +68,15 @@ struct ContentView: View {
         defaults.set(abilityLevel, forKey: storageKey("level"))
     }
 
+    private func selectLesson(_ id: String) {
+        guard Lesson.all.contains(where: { $0.id == id }) else { return }
+        audio.stopAll()
+        lessonID = id
+        sentenceIndex = 0
+        step = .listen
+        saveProgress()
+    }
+
     private func loadProfile() {
         audio.stopAll()
         audio.profileID = activeProfile
@@ -91,7 +100,6 @@ struct ContentView: View {
         guard profile != activeProfile else { showProfiles = false; return }
         saveProgress()
         activeProfile = profile
-        loadProfile()
         showProfiles = false
     }
 
@@ -100,7 +108,7 @@ struct ContentView: View {
     }
 
     private var currentSentence: LessonLine {
-        lesson.lines[sentenceIndex]
+        lesson.lines[min(max(sentenceIndex, 0), lesson.lines.count - 1)]
     }
 
     var body: some View {
@@ -129,24 +137,31 @@ struct ContentView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .preferredColorScheme(.light)
-        .onAppear { loadProfile() }
+        .onAppear {
+            // Load persisted state after the initial view is installed.
+            loadProfile()
+        }
         .sheet(isPresented: $showProfiles) { profilesSheet }
         .onChange(of: activeProfile) { _, _ in loadProfile() }
-        .onChange(of: completed) { _, _ in saveProgress() }
-        .onChange(of: abilityLevel) { _, _ in saveProgress() }
-        .onChange(of: lessonID) { _, _ in
-            audio.stopAll()
-            sentenceIndex = 0
-            step = .listen
-            saveProgress()
+        // Persist only the changed field. Restoring a profile must not overwrite
+        // other saved fields with transient values during SwiftUI's update cycle.
+        .onChange(of: completed) { _, value in
+            UserDefaults.standard.set(value, forKey: storageKey("completed"))
         }
-        .onChange(of: step) { _, _ in
-            audio.stopAll()
-            saveProgress()
+        .onChange(of: abilityLevel) { _, value in
+            UserDefaults.standard.set(value, forKey: storageKey("level"))
         }
-        .onChange(of: sentenceIndex) { _, _ in
+        .onChange(of: lessonID) { _, value in
             audio.stopAll()
-            saveProgress()
+            UserDefaults.standard.set(value, forKey: storageKey("lesson"))
+        }
+        .onChange(of: step) { _, value in
+            audio.stopAll()
+            UserDefaults.standard.set(value.rawValue, forKey: storageKey("step"))
+        }
+        .onChange(of: sentenceIndex) { _, value in
+            audio.stopAll()
+            UserDefaults.standard.set(value, forKey: storageKey("sentenceIndex"))
         }
         .onChange(of: speed) { _, value in
             audio.setSpeed(Float(value))
@@ -196,7 +211,7 @@ struct ContentView: View {
 
             Menu {
                 ForEach(Lesson.all) { item in
-                    Button(item.title) { lessonID = item.id }
+                    Button(item.title) { selectLesson(item.id) }
                 }
             } label: {
                 Image(systemName: "books.vertical.fill")
