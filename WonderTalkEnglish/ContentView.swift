@@ -24,8 +24,11 @@ private enum StudyStep: Int, CaseIterable {
 
 struct ContentView: View {
     @StateObject private var audio = AudioStudio()
-    @AppStorage("wt.v3.lesson") private var lessonID = "rates"
-    @AppStorage("wt.v3.completed") private var completed = ""
+    @AppStorage("wt.family.activeProfile") private var activeProfile = "adult"
+    @State private var lessonID = "rates"
+    @State private var completed = ""
+    @State private var abilityLevel = 1
+    @State private var showProfiles = false
 
     @State private var step: StudyStep = .listen
     @State private var sentenceIndex = 0
@@ -34,6 +37,63 @@ struct ContentView: View {
 
     private let blue = Color(red: 0.07, green: 0.39, blue: 0.96)
     private let yellow = Color(red: 1, green: 0.80, blue: 0.18)
+
+    private var isChild: Bool { activeProfile == "daughter" }
+    private var profileTitle: String { isChild ? "女儿的空间" : "我的空间" }
+    private var levelLabel: String {
+        isChild ? "Kids Level \(abilityLevel)" : "CEFR \(Self.adultLevels[min(max(abilityLevel, 1), 6) - 1])"
+    }
+    private static let adultLevels = ["A1", "A2", "B1", "B2", "C1", "C2"]
+
+    private func storageKey(_ field: String, profile: String? = nil) -> String {
+        "wt.family.\(profile ?? activeProfile).\(field)"
+    }
+
+    private func savedLessons(for profile: String) -> Set<String> {
+        Set((UserDefaults.standard.string(forKey: storageKey("completed", profile: profile)) ?? "")
+            .split(separator: ",").map(String.init))
+    }
+
+    private func persistedLevel(for profile: String) -> Int {
+        let value = UserDefaults.standard.integer(forKey: storageKey("level", profile: profile))
+        return value == 0 ? (profile == "daughter" ? 2 : 1) : min(6, max(1, value))
+    }
+
+    private func saveProgress() {
+        let defaults = UserDefaults.standard
+        defaults.set(lessonID, forKey: storageKey("lesson"))
+        defaults.set(completed, forKey: storageKey("completed"))
+        defaults.set(step.rawValue, forKey: storageKey("step"))
+        defaults.set(sentenceIndex, forKey: storageKey("sentenceIndex"))
+        defaults.set(abilityLevel, forKey: storageKey("level"))
+    }
+
+    private func loadProfile() {
+        audio.stopAll()
+        audio.profileID = activeProfile
+        let defaults = UserDefaults.standard
+        // Migrate pre-family lesson progress into the adult profile once.
+        if activeProfile == "adult" && !defaults.bool(forKey: "wt.family.migrated.v3") {
+            defaults.set(defaults.string(forKey: "wt.v3.lesson") ?? "rates", forKey: storageKey("lesson"))
+            defaults.set(defaults.string(forKey: "wt.v3.completed") ?? "", forKey: storageKey("completed"))
+            defaults.set(true, forKey: "wt.family.migrated.v3")
+        }
+        let savedLesson = defaults.string(forKey: storageKey("lesson")) ?? "rates"
+        lessonID = Lesson.all.contains(where: { $0.id == savedLesson }) ? savedLesson : "rates"
+        completed = defaults.string(forKey: storageKey("completed")) ?? ""
+        abilityLevel = persistedLevel(for: activeProfile)
+        step = StudyStep(rawValue: defaults.integer(forKey: storageKey("step"))) ?? .listen
+        sentenceIndex = min(max(0, defaults.integer(forKey: storageKey("sentenceIndex"))),
+                            max(0, lesson.lines.count - 1))
+    }
+
+    private func switchProfile(to profile: String) {
+        guard profile != activeProfile else { showProfiles = false; return }
+        saveProgress()
+        activeProfile = profile
+        loadProfile()
+        showProfiles = false
+    }
 
     private var lesson: Lesson {
         Lesson.all.first(where: { $0.id == lessonID }) ?? Lesson.all[0]
@@ -69,16 +129,24 @@ struct ContentView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .preferredColorScheme(.light)
+        .onAppear { loadProfile() }
+        .sheet(isPresented: $showProfiles) { profilesSheet }
+        .onChange(of: activeProfile) { _, _ in loadProfile() }
+        .onChange(of: completed) { _, _ in saveProgress() }
+        .onChange(of: abilityLevel) { _, _ in saveProgress() }
         .onChange(of: lessonID) { _, _ in
             audio.stopAll()
             sentenceIndex = 0
             step = .listen
+            saveProgress()
         }
         .onChange(of: step) { _, _ in
             audio.stopAll()
+            saveProgress()
         }
         .onChange(of: sentenceIndex) { _, _ in
             audio.stopAll()
+            saveProgress()
         }
         .onChange(of: speed) { _, value in
             audio.setSpeed(Float(value))
@@ -111,6 +179,20 @@ struct ContentView: View {
             }
 
             Spacer(minLength: 5)
+
+            Button {
+                showProfiles = true
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: isChild ? "face.smiling.fill" : "person.crop.circle.fill")
+                    Text(isChild ? "女儿" : "我的")
+                        .font(.caption.bold())
+                }
+                .foregroundStyle(.white)
+                .padding(9)
+                .background(.white.opacity(0.16), in: Capsule())
+            }
+            .accessibilityLabel("切换学习账号")
 
             Menu {
                 ForEach(Lesson.all) { item in
@@ -419,6 +501,7 @@ struct ContentView: View {
             Button {
                 let ids = Set(completed.split(separator: ",").map(String.init))
                 completed = ids.union([lesson.id]).sorted().joined(separator: ",")
+                saveProgress()
             } label: {
                 Label(completed.split(separator: ",").contains(Substring(lesson.id)) ? "已保存学习进度" : "保存完成记录", systemImage: "checkmark.circle")
                     .frame(maxWidth: .infinity)
@@ -435,6 +518,90 @@ struct ContentView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity)
+    }
+
+    private var profilesSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("两个学习档案使用同一套 AI 配置，但课程、录音和能力等级独立保存于当前设备。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(["adult", "daughter"], id: \.self) { profile in
+                        Button {
+                            switchProfile(to: profile)
+                        } label: {
+                            HStack(spacing: 15) {
+                                Image(systemName: profile == "adult" ? "person.crop.circle.fill" : "face.smiling.fill")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(blue)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(profile == "adult" ? "我的英语空间" : "女儿的英语空间")
+                                        .font(.headline)
+                                    Text(profile == "adult" ?
+                                         "CEFR \(Self.adultLevels[persistedLevel(for: profile) - 1])" :
+                                         "Kids Level \(persistedLevel(for: profile))")
+                                        .font(.subheadline)
+                                    Text("已完成 \(savedLessons(for: profile).count) 节课程")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if activeProfile == profile {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .padding(18)
+                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Divider()
+
+                    Text("当前档案 · \(profileTitle)")
+                        .font(.headline)
+                    HStack {
+                        Text("能力等级")
+                        Spacer()
+                        Text(levelLabel).fontWeight(.bold)
+                    }
+                    HStack(spacing: 25) {
+                        Button {
+                            abilityLevel = max(1, abilityLevel - 1)
+                        } label: {
+                            Image(systemName: "minus.circle.fill").font(.title)
+                        }
+                        Spacer()
+                        Text(levelLabel)
+                            .font(.title3.bold())
+                        Spacer()
+                        Button {
+                            abilityLevel = min(6, abilityLevel + 1)
+                        } label: {
+                            Image(systemName: "plus.circle.fill").font(.title)
+                        }
+                    }
+                    .disabled(false)
+                    Text("等级目前由家长手动设定，并非 AI 测评结果。后续可接入分项能力评估。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("本机储存：切换账号不会清除课程记录。删除 App 前请备份，当前版本尚未实现跨设备同步。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(22)
+            }
+            .navigationTitle("Family Profiles")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") { showProfiles = false }
+                }
+            }
+        }
     }
 
     private var recordingCount: Int {
