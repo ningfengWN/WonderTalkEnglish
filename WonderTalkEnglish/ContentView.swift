@@ -45,6 +45,7 @@ struct ContentView: View {
     @State private var speed = 1.0
     @State private var showTranslation = true
     @State private var showNewLesson = false
+    @State private var showTranscriptImport = false
     @State private var showAlignment = false
     @State private var importingAudio = false
     @State private var alertText: String?
@@ -61,14 +62,18 @@ struct ContentView: View {
         // background extends behind the iPhone X notch and Home Indicator.
         VStack(spacing: compactPhone ? 8 : 14) {
                     header
-                    stepsBar
+                    if !(lesson?.lines.isEmpty ?? true) { stepsBar }
                     Group {
                         if let lesson {
+                            if lesson.lines.isEmpty {
+                                catalogPage(lesson)
+                            } else {
                             switch step {
                             case .listen: listenPage(lesson)
                             case .read: readPage(lesson)
                             case .shadow: shadowPage(lesson)
                             case .finish: finishPage(lesson)
+                            }
                             }
                         } else {
                             ContentUnavailableView("尚无课程", systemImage: "books.vertical",
@@ -127,6 +132,15 @@ struct ContentView: View {
                     lessonID = id
                     resetLesson()
                     showNewLesson = false
+                }
+            }
+        }
+        .sheet(isPresented: $showTranscriptImport) {
+            if let lesson {
+                TranscriptImportView(title: lesson.title) { transcript in
+                    courses.setTranscript(lessonID: lesson.id, transcript: transcript)
+                    showTranscriptImport = false
+                    step = .listen
                 }
             }
         }
@@ -297,7 +311,12 @@ struct ContentView: View {
                     Button("为当前课程导入 MP3 / M4A", systemImage: "square.and.arrow.down") {
                         importingAudio = true
                     }
-                    if lesson != nil {
+                    if let lesson, lesson.lines.isEmpty {
+                        Button("为当前课程导入逐句原文", systemImage: "text.badge.plus") {
+                            showTranscriptImport = true
+                        }
+                    }
+                    if let lesson, !lesson.lines.isEmpty {
                         Button("为当前课程对齐句子时间", systemImage: "waveform.path") {
                             showAlignment = true
                         }
@@ -339,6 +358,51 @@ struct ContentView: View {
 
     // On notched/compact iPhones, keep the entire listening lesson scrollable
     // rather than allowing fixed spacers to push playback controls off-screen.
+    private func catalogPage(_ lesson: Lesson) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(lesson.studyMode == "speaking" ? "Speaking · 日常使用" : "Understanding · 知识理解")
+                    .font(.caption.bold())
+                    .foregroundStyle(blue)
+                Text(lesson.title)
+                    .font(.title2.bold())
+                Text(lesson.subtitle)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Label(lesson.level ?? "待分级", systemImage: "chart.bar")
+                    Spacer()
+                    Text(lesson.sourceName)
+                }
+                .font(.subheadline)
+                if let url = URL(string: lesson.sourceURL), url.scheme == "https" {
+                    Link(destination: url) {
+                        Label("打开官方课程 / 原始资料", systemImage: "arrow.up.right.square")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                Text("当前是外部资料目录条目。未附带真人音频、逐字稿或句子时间轴，不能直接使用 App 内播放器或跟读。")
+                    .font(.subheadline)
+                Text(lesson.studyMode == "speaking"
+                    ? "建议：原站泛听 → 阅读原站文字稿 → 精听 → 跟读 → 日常复述和互动。"
+                    : "建议：了解背景 → 原站泛听 → 阅读原文 → 精听 → 用中文验证理解。")
+                    .font(.subheadline)
+                Button("导入有使用权限的逐句英文原文") {
+                    showTranscriptImport = true
+                }
+                .buttonStyle(.bordered)
+                Button("导入本地合法音频 (MP3 / M4A)") {
+                    importingAudio = true
+                }
+                .buttonStyle(.bordered)
+                sourceLine(lesson)
+            }
+            .padding(compactPhone ? 16 : 22)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
     private func listenPage(_ lesson: Lesson) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: compactPhone ? 12 : 18) {
@@ -740,6 +804,39 @@ private struct NewLessonView: View {
                     }
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty ||
                               transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+}
+
+private struct TranscriptImportView: View {
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+    let onSave: (String) -> Void
+    @State private var transcript = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("课程") { Text(title) }
+                Section("有合法使用权限的英文原文（每行一句）") {
+                    TextEditor(text: $transcript)
+                        .frame(minHeight: 240)
+                }
+                Section {
+                    Text("添加原文后可进入应用内阅读和跟读页面。逐句播放仍需导入本地音频并手工对齐时间。")
+                        .font(.caption)
+                }
+            }
+            .navigationTitle("导入课程原文")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { onSave(transcript) }
+                        .disabled(transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }
