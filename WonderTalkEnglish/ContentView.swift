@@ -49,23 +49,7 @@ struct ContentView: View {
         courses.lesson(lessonID) ?? courses.lessons.first
     }
 
-    // Separate family-learning areas while preserving the existing V4 English flow.
     var body: some View {
-        TabView {
-            englishHome
-                .tabItem {
-                    Label("英语", systemImage: "headphones")
-                }
-            PinyinPracticeView()
-                .tabItem {
-                    Label("拼音", systemImage: "character.book.closed")
-                }
-        }
-        .tint(blue)
-        .preferredColorScheme(.light)
-    }
-
-    private var englishHome: some View {
         GeometryReader { geometry in
             ZStack {
                 blue.ignoresSafeArea()
@@ -96,7 +80,6 @@ struct ContentView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .preferredColorScheme(.light)
-        .onDisappear { audio.stopAll() }
         .onChange(of: lessonID) { _, _ in resetLesson() }
         .onChange(of: step) { _, _ in audio.stopAll() }
         .onChange(of: sentenceIndex) { _, _ in audio.stopAll() }
