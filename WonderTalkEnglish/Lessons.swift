@@ -25,6 +25,10 @@ struct Lesson: Identifiable, Codable, Equatable {
     var audioFilename: String? = nil
     var bundledAudioStem: String? = nil
     var lines: [LessonLine]
+    var level: String? = nil
+    var topic: String? = nil
+    var studyMode: String? = nil
+    var materialStatus: String? = nil
 
     var isImported: Bool { bundledAudioStem == nil }
     var fullAudioStem: String? { bundledAudioStem.map { "\($0)_full" } }
@@ -56,32 +60,50 @@ final class CourseStore: ObservableObject {
     private var catalogURL: URL { appSupport.appendingPathComponent("catalog.json") }
 
     init() {
-        if let data = try? Data(contentsOf: catalogURL),
-           let saved = try? JSONDecoder().decode([Lesson].self, from: data),
-           !saved.isEmpty {
-            lessons = saved
-        } else {
-            loadBundledLessons()
-            save()
+        let saved: [Lesson] = {
+            guard let data = try? Data(contentsOf: catalogURL) else { return [] }
+            return (try? JSONDecoder().decode([Lesson].self, from: data)) ?? []
+        }()
+        let bundled = bundledLessons()
+        // Preserve existing user-imported audio, aligned sentences and translations.
+        // Add new catalog entries without wiping progress or editable courses.
+        var byID = Dictionary(uniqueKeysWithValues: bundled.map { ($0.id, $0) })
+        for item in saved {
+            if let original = byID[item.id] {
+                var merged = original
+                if item.audioFilename != nil { merged.audioFilename = item.audioFilename }
+                if !item.lines.isEmpty { merged.lines = item.lines }
+                byID[item.id] = merged
+            } else {
+                byID[item.id] = item
+            }
         }
+        lessons = byID.values.sorted { $0.id < $1.id }
+        if lessons.isEmpty {
+            errorMessage = "没有找到课程 JSON。请确认 Lessons 文件夹已加入 App Target。"
+        }
+        save()
     }
 
-    private func loadBundledLessons() {
+    private func bundledLessons() -> [Lesson] {
         var urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Lessons") ?? []
         if urls.isEmpty {
-            for name in ["rates", "renaissance"] {
+            for name in ["rates", "renaissance", "learning_catalog_v1"] {
                 if let url = Bundle.main.url(forResource: name, withExtension: "json") {
                     urls.append(url)
                 }
             }
         }
-        lessons = urls.compactMap { url in
-            guard let data = try? Data(contentsOf: url) else { return nil }
-            return try? JSONDecoder().decode(Lesson.self, from: data)
-        }.sorted { $0.id < $1.id }
-        if lessons.isEmpty {
-            errorMessage = "没有找到 Lessons 文件夹中的 JSON 课程。请将 Lessons 添加到 App Target。"
+        var all: [Lesson] = []
+        for url in urls {
+            guard let data = try? Data(contentsOf: url) else { continue }
+            if let list = try? JSONDecoder().decode([Lesson].self, from: data) {
+                all.append(contentsOf: list)
+            } else if let item = try? JSONDecoder().decode(Lesson.self, from: data) {
+                all.append(item)
+            }
         }
+        return all.sorted { $0.id < $1.id }
     }
 
     func lesson(_ id: String) -> Lesson? {
@@ -164,9 +186,25 @@ final class CourseStore: ObservableObject {
         save()
     }
 
+    func setTranscript(lessonID: String, transcript: String) {
+        guard let index = lessons.firstIndex(where: { $0.id == lessonID }) else { return }
+        let sentences = transcript.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !sentences.isEmpty else {
+            errorMessage = "请至少输入一行英文原文。"
+            return
+        }
+        lessons[index].lines = sentences.enumerated().map {
+            LessonLine(id: $0.offset, english: $0.element, chinese: "")
+        }
+        save()
+    }
+
     func resetCatalog() {
         // Never automatically delete imported audio or recordings.
-        loadBundledLessons()
+        let bundled = bundledLessons()
+        lessons = bundled
         save()
     }
 }
