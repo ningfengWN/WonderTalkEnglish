@@ -143,11 +143,14 @@ private final class PinyinVoiceCoach: NSObject, ObservableObject {
             message = "中文语音识别暂不可用。可以回放录音并由家长判断。"
             return
         }
+        guard recognizer.supportsOnDeviceRecognition else {
+            recognizing = false
+            message = "当前设备不支持离线中文语音识别。录音已保存，请回放并由家长判断。"
+            return
+        }
         let request = SFSpeechURLRecognitionRequest(url: recordingURL)
         request.shouldReportPartialResults = false
-        if recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
+        request.requiresOnDeviceRecognition = true
         recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
                 guard let self else { return }
