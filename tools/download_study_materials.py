@@ -38,6 +38,39 @@ def get(url, max_bytes=16_000_000):
             raise ValueError("Page exceeds size limit")
         return data, response.headers.get_content_type()
 
+class TextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.parts = []
+        self.skip = 0
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style", "noscript"):
+            self.skip += 1
+        if tag in ("p", "h1", "h2", "h3", "h4", "div", "br"):
+            self.parts.append("\n")
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "noscript") and self.skip:
+            self.skip -= 1
+    def handle_data(self, data):
+        if not self.skip:
+            self.parts.append(data)
+    def to_text(self):
+        text = html.unescape(" ".join(self.parts))
+        lines = [re.sub(r"\s+", " ", item).strip() for item in text.splitlines()]
+        return "\n".join(item for item in lines if item)
+
+def yale_transcript(page):
+    extractor = TextExtractor()
+    extractor.feed(page)
+    text = extractor.to_text()
+    start = re.search(r"Chapter\s*1[.：:]\s*", text, re.I)
+    if not start:
+        return None
+    transcript = text[start.start():]
+    transcript = re.split(r"\n\s*(?:Download|Related Resources|More about this course|Copyright)\b",
+                          transcript, maxsplit=1, flags=re.I)[0]
+    return transcript if len(transcript) > 1000 else None
+
 def candidates(page, base):
     parser = MediaLinks()
     parser.feed(page)
@@ -102,6 +135,13 @@ def main():
             if content_type not in ("text/html", "application/xhtml+xml"):
                 raise ValueError("Expected an HTML source page")
             (folder / "source_page.html").write_bytes(body)
+            if source == "Open Yale Courses":
+                transcript = yale_transcript(body.decode("utf-8", errors="replace"))
+                if transcript:
+                    (folder / "transcript.txt").write_text(transcript, encoding="utf-8")
+                    status["transcript_path"] = str(folder / "transcript.txt")
+                else:
+                    status["transcript_note"] = "No identifiable chapter transcript; see saved page."
             (folder / "metadata.json").write_text(
                 json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
             links = candidates(body.decode("utf-8", errors="replace"), record["sourceURL"])
