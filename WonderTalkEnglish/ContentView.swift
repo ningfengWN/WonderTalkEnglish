@@ -416,6 +416,21 @@ struct ContentView: View {
                     ? "建议：原站泛听 → 阅读原站文字稿 → 精听 → 跟读 → 日常复述和互动。"
                     : "建议：了解背景 → 原站泛听 → 阅读原文 → 精听 → 用中文验证理解。")
                     .font(.subheadline)
+                if let guide = lesson.studyGuide {
+                    Divider()
+                    Text("学习目标").font(.headline)
+                    Text(guide.goal).font(.subheadline)
+                    Text("训练流程").font(.headline)
+                    ForEach(Array(guide.steps.enumerated()), id: \.offset) { index, instruction in
+                        Text("\(index + 1). \(instruction)")
+                            .font(.subheadline)
+                    }
+                    Text("理解与应用").font(.headline)
+                    ForEach(Array(guide.comprehensionPrompts.enumerated()), id: \.offset) { index, question in
+                        Text("\(index + 1). \(question)")
+                            .font(.subheadline)
+                    }
+                }
                 Button("导入有使用权限的逐句英文原文") {
                     showTranscriptImport = true
                 }
