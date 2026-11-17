@@ -14,6 +14,14 @@ struct LessonLine: Identifiable, Codable, Equatable {
     }
 }
 
+struct StudyGuide: Codable, Equatable {
+    var goal: String
+    var steps: [String]
+    var comprehensionPrompts: [String]
+    var transcriptStatus: String
+    var audioStatus: String
+}
+
 struct Lesson: Identifiable, Codable, Equatable {
     var id: String
     var category: String
@@ -29,6 +37,9 @@ struct Lesson: Identifiable, Codable, Equatable {
     var topic: String? = nil
     var studyMode: String? = nil
     var materialStatus: String? = nil
+    var studyGuide: StudyGuide? = nil
+    var licensePolicy: String? = nil
+    var catalogVersion: Int? = nil
 
     var isImported: Bool { bundledAudioStem == nil }
     var fullAudioStem: String? { bundledAudioStem.map { "\($0)_full" } }
