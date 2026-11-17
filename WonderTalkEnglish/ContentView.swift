@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum StudyStep: Int, CaseIterable {
     case listen, read, shadow, finish
@@ -17,364 +18,459 @@ private enum StudyStep: Int, CaseIterable {
         case .listen: "headphones"
         case .read: "text.book.closed"
         case .shadow: "mic"
-        case .finish: "checkmark"
+        case .finish: "checkmark.seal"
         }
     }
 }
 
 struct ContentView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var compactPhone: Bool { horizontalSizeClass == .compact }
+
+    @StateObject private var courses = CourseStore()
     @StateObject private var audio = AudioStudio()
+
+    // Family profiles are retained; only the adult learning flow is being developed.
     @AppStorage("wt.family.activeProfile") private var activeProfile = "adult"
     @State private var lessonID = "rates"
     @State private var completed = ""
     @State private var abilityLevel = 1
-    @State private var showProfiles = false
-
+    @State private var sessionCount = 0
+    @State private var lastStudied: Date?
+    @State private var showAccount = false
+    @State private var restoringProfile = false
     @State private var step: StudyStep = .listen
     @State private var sentenceIndex = 0
     @State private var speed = 1.0
     @State private var showTranslation = true
+    @State private var showNewLesson = false
+    @State private var showAlignment = false
+    @State private var importingAudio = false
+    @State private var alertText: String?
 
     private let blue = Color(red: 0.07, green: 0.39, blue: 0.96)
     private let yellow = Color(red: 1, green: 0.80, blue: 0.18)
 
-    private var isChild: Bool { activeProfile == "daughter" }
-    private var profileTitle: String { isChild ? "女儿的空间" : "我的空间" }
-    private var levelLabel: String {
-        isChild ? "Kids Level \(abilityLevel)" : "CEFR \(Self.adultLevels[min(max(abilityLevel, 1), 6) - 1])"
-    }
-    private static let adultLevels = ["A1", "A2", "B1", "B2", "C1", "C2"]
-
-    private func storageKey(_ field: String, profile: String? = nil) -> String {
-        "wt.family.\(profile ?? activeProfile).\(field)"
-    }
-
-    private func savedLessons(for profile: String) -> Set<String> {
-        Set((UserDefaults.standard.string(forKey: storageKey("completed", profile: profile)) ?? "")
-            .split(separator: ",").map(String.init))
-    }
-
-    private func persistedLevel(for profile: String) -> Int {
-        let value = UserDefaults.standard.integer(forKey: storageKey("level", profile: profile))
-        return value == 0 ? (profile == "daughter" ? 2 : 1) : min(6, max(1, value))
-    }
-
-    private func saveProgress() {
-        let defaults = UserDefaults.standard
-        defaults.set(lessonID, forKey: storageKey("lesson"))
-        defaults.set(completed, forKey: storageKey("completed"))
-        defaults.set(step.rawValue, forKey: storageKey("step"))
-        defaults.set(sentenceIndex, forKey: storageKey("sentenceIndex"))
-        defaults.set(abilityLevel, forKey: storageKey("level"))
-    }
-
-    private func selectLesson(_ id: String) {
-        guard Lesson.all.contains(where: { $0.id == id }) else { return }
-        audio.stopAll()
-        lessonID = id
-        sentenceIndex = 0
-        step = .listen
-        saveProgress()
-    }
-
-    private func loadProfile() {
-        audio.stopAll()
-        audio.profileID = activeProfile
-        let defaults = UserDefaults.standard
-        // Migrate pre-family lesson progress into the adult profile once.
-        if activeProfile == "adult" && !defaults.bool(forKey: "wt.family.migrated.v3") {
-            defaults.set(defaults.string(forKey: "wt.v3.lesson") ?? "rates", forKey: storageKey("lesson"))
-            defaults.set(defaults.string(forKey: "wt.v3.completed") ?? "", forKey: storageKey("completed"))
-            defaults.set(true, forKey: "wt.family.migrated.v3")
-        }
-        let savedLesson = defaults.string(forKey: storageKey("lesson")) ?? "rates"
-        lessonID = Lesson.all.contains(where: { $0.id == savedLesson }) ? savedLesson : "rates"
-        completed = defaults.string(forKey: storageKey("completed")) ?? ""
-        abilityLevel = persistedLevel(for: activeProfile)
-        step = StudyStep(rawValue: defaults.integer(forKey: storageKey("step"))) ?? .listen
-        sentenceIndex = min(max(0, defaults.integer(forKey: storageKey("sentenceIndex"))),
-                            max(0, lesson.lines.count - 1))
-    }
-
-    private func switchProfile(to profile: String) {
-        guard profile != activeProfile else { showProfiles = false; return }
-        saveProgress()
-        activeProfile = profile
-        showProfiles = false
-    }
-
-    private var lesson: Lesson {
-        Lesson.all.first(where: { $0.id == lessonID }) ?? Lesson.all[0]
-    }
-
-    private var currentSentence: LessonLine {
-        lesson.lines[min(max(sentenceIndex, 0), lesson.lines.count - 1)]
+    private var lesson: Lesson? {
+        courses.lesson(lessonID) ?? courses.lessons.first
     }
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 blue.ignoresSafeArea()
-
-                VStack(spacing: 16) {
+                VStack(spacing: compactPhone ? 8 : 14) {
                     header
                     stepsBar
-
-                    VStack(spacing: 0) {
-                        switch step {
-                        case .listen: listenPage
-                        case .read: readPage
-                        case .shadow: shadowPage
-                        case .finish: finishPage
+                    Group {
+                        if let lesson {
+                            switch step {
+                            case .listen: listenPage(lesson)
+                            case .read: readPage(lesson)
+                            case .shadow: shadowPage(lesson)
+                            case .finish: finishPage(lesson)
+                            }
+                        } else {
+                            ContentUnavailableView("尚无课程", systemImage: "books.vertical",
+                                                   description: Text("请检查 Lessons 文件夹，或新建一节课程。"))
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 28))
-                    .padding(.horizontal, 15)
-                    .padding(.bottom, 12)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 26))
+                    .padding(.horizontal, compactPhone ? 8 : 12)
+                    .padding(.bottom, compactPhone ? 6 : 10)
                 }
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .preferredColorScheme(.light)
-        .onAppear {
-            // Load persisted state after the initial view is installed.
-            loadProfile()
-        }
-        .sheet(isPresented: $showProfiles) { profilesSheet }
+        .onAppear { loadProfile() }
+        .sheet(isPresented: $showAccount) { accountSheet }
         .onChange(of: activeProfile) { _, _ in loadProfile() }
-        // Persist only the changed field. Restoring a profile must not overwrite
-        // other saved fields with transient values during SwiftUI's update cycle.
+        .onChange(of: lessonID) { _, value in
+            if !restoringProfile {
+                resetLesson()
+                UserDefaults.standard.set(value, forKey: storageKey("lesson"))
+                markActivity()
+            }
+        }
         .onChange(of: completed) { _, value in
-            UserDefaults.standard.set(value, forKey: storageKey("completed"))
+            if !restoringProfile { UserDefaults.standard.set(value, forKey: storageKey("completed")) }
         }
         .onChange(of: abilityLevel) { _, value in
-            UserDefaults.standard.set(value, forKey: storageKey("level"))
-        }
-        .onChange(of: lessonID) { _, value in
-            audio.stopAll()
-            UserDefaults.standard.set(value, forKey: storageKey("lesson"))
+            if !restoringProfile { UserDefaults.standard.set(value, forKey: storageKey("level")) }
         }
         .onChange(of: step) { _, value in
             audio.stopAll()
-            UserDefaults.standard.set(value.rawValue, forKey: storageKey("step"))
+            if !restoringProfile {
+                UserDefaults.standard.set(value.rawValue, forKey: storageKey("step"))
+                markActivity()
+            }
         }
         .onChange(of: sentenceIndex) { _, value in
             audio.stopAll()
-            UserDefaults.standard.set(value, forKey: storageKey("sentenceIndex"))
+            if !restoringProfile { UserDefaults.standard.set(value, forKey: storageKey("sentenceIndex")) }
         }
-        .onChange(of: speed) { _, value in
-            audio.setSpeed(Float(value))
+        .onChange(of: speed) { _, newValue in audio.setSpeed(Float(newValue)) }
+        .onChange(of: audio.errorMessage) { _, newValue in
+            if let newValue { alertText = newValue; audio.errorMessage = nil }
         }
-        .alert("音频提示", isPresented: Binding(
-            get: { audio.errorMessage != nil },
-            set: { if !$0 { audio.errorMessage = nil } }
+        .onChange(of: courses.errorMessage) { _, newValue in
+            if let newValue { alertText = newValue; courses.errorMessage = nil }
+        }
+        .sheet(isPresented: $showNewLesson) {
+            NewLessonView { title, category, source, link, rights, transcript in
+                if let id = courses.addLesson(title: title, category: category,
+                                              sourceName: source, sourceURL: link,
+                                              rightsNote: rights, transcript: transcript) {
+                    lessonID = id
+                    resetLesson()
+                    showNewLesson = false
+                }
+            }
+        }
+        .sheet(isPresented: $showAlignment) {
+            if let lesson {
+                AlignmentView(lessonID: lesson.id, courses: courses, audio: audio)
+            }
+        }
+        .fileImporter(isPresented: $importingAudio, allowedContentTypes: [.audio]) { result in
+            switch result {
+            case .success(let url):
+                audio.stopAll()
+                courses.importAudio(from: url, for: lessonID)
+            case .failure(let error):
+                alertText = "文件选择失败：\(error.localizedDescription)"
+            }
+        }
+        .alert("WonderTalk 提示", isPresented: Binding(
+            get: { alertText != nil },
+            set: { if !$0 { alertText = nil } }
         )) {
-            Button("知道了") { audio.errorMessage = nil }
+            Button("知道了") { alertText = nil }
         } message: {
-            Text(audio.errorMessage ?? "")
+            Text(alertText ?? "")
         }
+    }
+
+    private static let adultLevels = ["A1", "A2", "B1", "B2", "C1", "C2"]
+
+    private func storageKey(_ field: String, profile: String? = nil) -> String {
+        "wt.family.\(profile ?? activeProfile).\(field)"
+    }
+
+    private func markActivity() {
+        let date = Date()
+        lastStudied = date
+        UserDefaults.standard.set(date, forKey: storageKey("lastStudied"))
+    }
+
+    private func saveProfile() {
+        let defaults = UserDefaults.standard
+        defaults.set(lessonID, forKey: storageKey("lesson"))
+        defaults.set(completed, forKey: storageKey("completed"))
+        defaults.set(step.rawValue, forKey: storageKey("step"))
+        defaults.set(sentenceIndex, forKey: storageKey("sentenceIndex"))
+        defaults.set(abilityLevel, forKey: storageKey("level"))
+        defaults.set(sessionCount, forKey: storageKey("sessions"))
+    }
+
+    private func loadProfile() {
+        audio.stopAll()
+        restoringProfile = true
+        audio.profileID = activeProfile
+        let defaults = UserDefaults.standard
+        // Preserve existing family-profile progress and older adult V3 data.
+        if activeProfile == "adult" && !defaults.bool(forKey: "wt.family.migrated.v3") {
+            defaults.set(defaults.string(forKey: "wt.v3.lesson") ?? "rates", forKey: storageKey("lesson"))
+            defaults.set(defaults.string(forKey: "wt.v3.completed") ?? "", forKey: storageKey("completed"))
+            defaults.set(true, forKey: "wt.family.migrated.v3")
+        }
+        let saved = defaults.string(forKey: storageKey("lesson")) ??
+                    (activeProfile == "adult" ? defaults.string(forKey: "wt.v4.selectedLesson") : nil) ??
+                    "rates"
+        lessonID = courses.lesson(saved) != nil ? saved : (courses.lessons.first?.id ?? "rates")
+        completed = defaults.string(forKey: storageKey("completed")) ??
+                    (activeProfile == "adult" ? defaults.string(forKey: "wt.v4.completed") : nil) ??
+                    ""
+        let level = defaults.integer(forKey: storageKey("level"))
+        abilityLevel = level == 0 ? (activeProfile == "adult" ? 1 : 2) : min(6, max(1, level))
+        sessionCount = defaults.integer(forKey: storageKey("sessions"))
+        lastStudied = defaults.object(forKey: storageKey("lastStudied")) as? Date
+        step = StudyStep(rawValue: defaults.integer(forKey: storageKey("step"))) ?? .listen
+        let maxIndex = max(0, (courses.lesson(lessonID)?.lines.count ?? 1) - 1)
+        sentenceIndex = min(max(0, defaults.integer(forKey: storageKey("sentenceIndex"))), maxIndex)
+        // Defer restoring flag until SwiftUI has processed the restored state.
+        DispatchQueue.main.async { self.restoringProfile = false }
+    }
+
+    private func switchProfile(_ profile: String) {
+        guard profile != activeProfile else { showAccount = false; return }
+        saveProfile()
+        activeProfile = profile
+        showAccount = false
+    }
+
+    private var accountSheet: some View {
+        NavigationStack {
+            Form {
+                Section("家庭学习档案") {
+                    Button("妈妈 · 英语学习") { switchProfile("adult") }
+                    Button("女儿 · 保留档案（暂不开发）") { switchProfile("daughter") }
+                    Text("当前档案：\(activeProfile == "adult" ? "妈妈" : "女儿")")
+                        .foregroundStyle(.secondary)
+                }
+                Section("学习记录 · 当前档案") {
+                    LabeledContent("已完成课程", value: "\(completed.split(separator: ",").count) 节")
+                    LabeledContent("完成练习次数", value: "\(sessionCount)")
+                    LabeledContent("当前课程", value: lesson?.title ?? "未选择")
+                    LabeledContent("当前步骤", value: step.title)
+                    if let lastStudied {
+                        LabeledContent("最近学习", value: lastStudied.formatted(date: .abbreviated, time: .shortened))
+                    }
+                }
+                if activeProfile == "adult" {
+                    Section("妈妈的英语等级（手动设置）") {
+                        Picker("CEFR 等级", selection: $abilityLevel) {
+                            ForEach(1...6, id: \.self) { value in
+                                Text(Self.adultLevels[value - 1]).tag(value)
+                            }
+                        }
+                    }
+                }
+                Section {
+                    Text("本机独立保存每个档案的学习进度和跟读录音。这里是本地学习账号档案，不是在线注册登录；跨设备同步尚未接入。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("我的学习账号")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") { showAccount = false }
+                }
+            }
+        }
+    }
+
+    private func resetLesson() {
+        audio.stopAll()
+        sentenceIndex = 0
+        step = .listen
     }
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(systemName: "sparkles.rectangle.stack")
-                .font(.title2)
+            Image(systemName: "waveform.circle.fill")
+                .font(.title)
                 .foregroundStyle(yellow)
-
             VStack(alignment: .leading, spacing: 3) {
-                Text("WONDERTALK ENGLISH")
+                Text("WONDERTALK ENGLISH · V4")
                     .font(.caption2.bold())
-                    .tracking(1.3)
-                    .foregroundStyle(.white.opacity(0.75))
-                Text(lesson.title)
+                    .tracking(1.0)
+                    .foregroundStyle(.white.opacity(0.8))
+                Text(lesson?.title ?? "Course Library")
                     .font(.headline)
                     .foregroundStyle(.white)
                     .lineLimit(1)
             }
-
-            Spacer(minLength: 5)
-
-            Button {
-                showProfiles = true
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: isChild ? "face.smiling.fill" : "person.crop.circle.fill")
-                    Text(isChild ? "女儿" : "我的")
-                        .font(.caption.bold())
-                }
-                .foregroundStyle(.white)
-                .padding(9)
-                .background(.white.opacity(0.16), in: Capsule())
+            Spacer(minLength: 4)
+            Button { showAccount = true } label: {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .background(.white.opacity(0.18), in: Circle())
             }
-            .accessibilityLabel("切换学习账号")
-
+            .accessibilityLabel("我的学习账号")
             Menu {
-                ForEach(Lesson.all) { item in
-                    Button(item.title) { selectLesson(item.id) }
+                Section("课程") {
+                    ForEach(courses.lessons) { item in
+                        Button(item.title) { lessonID = item.id }
+                    }
+                }
+                Section("课程管理") {
+                    Button("新建课程（粘贴逐句原文）", systemImage: "plus") {
+                        showNewLesson = true
+                    }
+                    Button("为当前课程导入 MP3 / M4A", systemImage: "square.and.arrow.down") {
+                        importingAudio = true
+                    }
+                    if lesson != nil {
+                        Button("为当前课程对齐句子时间", systemImage: "waveform.path") {
+                            showAlignment = true
+                        }
+                    }
                 }
             } label: {
                 Image(systemName: "books.vertical.fill")
                     .foregroundStyle(.white)
                     .padding(10)
-                    .background(.white.opacity(0.16), in: Circle())
+                    .background(.white.opacity(0.18), in: Circle())
             }
-            .accessibilityLabel("切换课程")
+            .accessibilityLabel("课程库与导入")
         }
-        .padding(.horizontal, 22)
-        .padding(.top, 12)
+        .padding(.horizontal, 18)
+        .padding(.top, compactPhone ? 2 : 10)
     }
 
     private var stepsBar: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 2) {
             ForEach(StudyStep.allCases, id: \.rawValue) { item in
-                Button {
-                    step = item
-                } label: {
-                    VStack(spacing: 6) {
-                        ZStack {
-                            Circle()
-                                .fill(item == step ? yellow : .white.opacity(0.95))
-                                .frame(width: 39, height: 39)
-                            Image(systemName: item.symbol)
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(item == step ? Color.black : blue)
-                        }
+                Button { step = item } label: {
+                    VStack(spacing: 5) {
+                        Image(systemName: item.symbol)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(item == step ? Color.black : blue)
+                            .frame(width: compactPhone ? 34 : 38, height: compactPhone ? 34 : 38)
+                            .background(item == step ? yellow : .white, in: Circle())
                         Text(item.title)
                             .font(.caption2.bold())
-                            .foregroundStyle(item == step ? .white : .white.opacity(0.65))
+                            .foregroundStyle(item == step ? .white : .white.opacity(0.7))
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 10)
     }
 
-    private var listenPage: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            sectionHeading("01", "Blind Listening", subtitle: "第一遍只听声音，不看原文。尝试理解文章的主要观点。")
+    // On notched/compact iPhones, keep the entire listening lesson scrollable
+    // rather than allowing fixed spacers to push playback controls off-screen.
+    private func listenPage(_ lesson: Lesson) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: compactPhone ? 12 : 18) {
+                heading("01", "Blind Listening",
+                        subtitle: "先泛听整篇文章，不看原文，抓住主题和逻辑。",
+                        lesson: lesson)
 
-            Spacer(minLength: 8)
-
-            VStack(spacing: 20) {
-                Image(systemName: "headphones.circle.fill")
-                    .font(.system(size: 90))
-                    .foregroundStyle(blue)
-
-                Text(lesson.subtitle)
-                    .font(.title3.weight(.medium))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(red: 0.27, green: 0.37, blue: 0.52))
-
-                Text("Listen for the main idea, not every word.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-
-            Spacer(minLength: 8)
-
-            audioProgress
-
-            HStack(spacing: 26) {
-                Button {
-                    audio.seek(to: max(0, audio.currentTime - 10))
-                } label: {
-                    Image(systemName: "gobackward.10")
-                        .font(.title)
+                VStack(spacing: compactPhone ? 8 : 18) {
+                    Image(systemName: "headphones.circle.fill")
+                        .font(.system(size: compactPhone ? 54 : 82))
+                        .foregroundStyle(blue)
+                    Text(lesson.subtitle)
+                        .font(compactPhone ? .headline : .title3.weight(.medium))
+                        .multilineTextAlignment(.center)
+                    Text("Listen for the main idea, not every word.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, compactPhone ? 4 : 16)
 
-                Button {
-                    audio.toggle(lesson.fullAudioStem, speed: Float(speed))
-                } label: {
-                    Image(systemName: audio.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.black)
-                        .frame(width: 78, height: 78)
-                        .background(yellow, in: Circle())
+                audioProgress
+
+                HStack(spacing: compactPhone ? 20 : 28) {
+                    Button {
+                        audio.seek(to: max(0, audio.currentTime - 10))
+                    } label: {
+                        Image(systemName: "gobackward.10").font(.title)
+                    }
+                    Button {
+                        audio.toggleFull(lesson, mediaDirectory: courses.mediaDirectory,
+                                         speed: Float(speed))
+                    } label: {
+                        Image(systemName: audio.isPlaying && audio.currentKey == "full_\(lesson.id)"
+                              ? "pause.fill" : "play.fill")
+                            .font(.system(size: compactPhone ? 24 : 28, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: compactPhone ? 64 : 80,
+                                   height: compactPhone ? 64 : 80)
+                            .background(yellow, in: Circle())
+                    }
+                    Button {
+                        audio.seek(to: audio.currentTime + 10)
+                    } label: {
+                        Image(systemName: "goforward.10").font(.title)
+                    }
                 }
+                .foregroundStyle(blue)
+                .frame(maxWidth: .infinity)
 
-                Button {
-                    audio.seek(to: audio.currentTime + 10)
-                } label: {
-                    Image(systemName: "goforward.10")
-                        .font(.title)
+                speedPicker
+                if lesson.audioFilename == nil && lesson.bundledAudioStem == nil {
+                    Button("尚无音频 · 点击导入 MP3") { importingAudio = true }
+                        .buttonStyle(.bordered)
                 }
-            }
-            .foregroundStyle(blue)
-            .frame(maxWidth: .infinity)
-
-            speedPicker
-
-            Button {
-                step = .read
-            } label: {
-                Text("下一步 · 阅读原文")
+                sourceLine(lesson)
+                Button("下一步 · 阅读原文") { step = .read }
+                    .buttonStyle(.borderedProminent)
+                    .tint(blue)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(blue)
+            .padding(compactPhone ? 16 : 22)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(24)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
-    private var readPage: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("02", "Read & Understand", subtitle: "阅读英文，理解内容。点击扬声器收听单句。")
-
-            Toggle("显示中文释义", isOn: $showTranslation)
-                .font(.subheadline)
-
+    private func readPage(_ lesson: Lesson) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            heading("02", "Read & Understand", subtitle: "逐句阅读。点击扬声器，收听与原音频对齐的句子。", lesson: lesson)
+            HStack {
+                Toggle("中文释义", isOn: $showTranslation)
+                    .font(.subheadline)
+                Spacer(minLength: 8)
+                Button("对齐时间") { showAlignment = true }
+                    .font(.subheadline.bold())
+            }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 12) {
                     ForEach(lesson.lines) { line in
-                        VStack(alignment: .leading, spacing: 9) {
-                            HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .top, spacing: 10) {
                                 Text(line.english)
                                     .font(.system(size: 18, weight: .medium))
-                                    .lineSpacing(5)
-                                    .foregroundStyle(Color(red: 0.24, green: 0.35, blue: 0.52))
-                                Spacer(minLength: 6)
+                                    .lineSpacing(4)
+                                Spacer(minLength: 3)
                                 Button {
-                                    audio.play(lesson.sentenceStem(line.id), speed: Float(speed))
+                                    audio.playSentence(lesson, index: line.id,
+                                                       mediaDirectory: courses.mediaDirectory,
+                                                       speed: Float(speed))
                                 } label: {
                                     Image(systemName: "speaker.wave.2.fill")
-                                        .foregroundStyle(Color.orange)
+                                        .foregroundStyle(.orange)
                                 }
                             }
-                            if showTranslation {
+                            if showTranslation && !line.chinese.isEmpty {
                                 Text(line.chinese)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
+                            if line.isAligned {
+                                Text("\(formatTime(line.start ?? 0)) – \(formatTime(line.end ?? 0))")
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        .padding(14)
+                        .padding(13)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(red: 0.96, green: 0.97, blue: 0.99), in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color(red: 0.96, green: 0.97, blue: 0.99),
+                                    in: RoundedRectangle(cornerRadius: 12))
                     }
                 }
             }
-
-            Button {
+            Button("下一步 · 逐句跟读") {
                 sentenceIndex = 0
                 step = .shadow
-            } label: {
-                Text("下一步 · 逐句跟读")
-                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .tint(blue)
         }
-        .padding(20)
+        .padding(compactPhone ? 14 : 18)
     }
 
-    private var shadowPage: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    private func shadowPage(_ lesson: Lesson) -> some View {
+        let index = min(sentenceIndex, max(0, lesson.lines.count - 1))
+        let line = lesson.lines[index]
+        return VStack(alignment: .leading, spacing: compactPhone ? 9 : 14) {
             HStack {
-                Text("Sentence \(sentenceIndex + 1)/\(lesson.lines.count)")
+                Text("Sentence \(index + 1)/\(lesson.lines.count)")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -382,295 +478,194 @@ struct ContentView: View {
                     .font(.caption.bold())
                     .foregroundStyle(blue)
             }
-
             speedPicker
-
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    HStack(alignment: .top, spacing: 8) {
-                        Text(currentSentence.english)
-                            .font(.system(size: 29, weight: .bold))
+                VStack(alignment: .leading, spacing: 20) {
+                    HStack(alignment: .top) {
+                        Text(line.english)
+                            .font(.system(size: compactPhone ? 23 : 27, weight: .bold))
                             .foregroundStyle(Color(red: 0.29, green: 0.41, blue: 0.57))
                             .fixedSize(horizontal: false, vertical: true)
-
+                        Spacer(minLength: 5)
                         Button {
-                            audio.play(lesson.sentenceStem(sentenceIndex), speed: Float(speed))
+                            audio.playSentence(lesson, index: index,
+                                               mediaDirectory: courses.mediaDirectory,
+                                               speed: Float(speed))
                         } label: {
                             Image(systemName: "speaker.wave.2.fill")
                                 .font(.title3)
-                                .foregroundStyle(Color.orange)
+                                .foregroundStyle(.orange)
                         }
                     }
-
-                    Text(currentSentence.chinese)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("示范音频")
-                            .font(.caption.weight(.semibold))
+                    if !line.chinese.isEmpty {
+                        Text(line.chinese)
+                            .font(.title3)
                             .foregroundStyle(.secondary)
-                        HStack {
-                            Button {
-                                audio.toggle(lesson.sentenceStem(sentenceIndex), speed: Float(speed))
-                            } label: {
-                                Image(systemName: audio.isPlaying && audio.currentStem == lesson.sentenceStem(sentenceIndex) ? "pause.circle.fill" : "play.circle.fill")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(Color.orange)
-                            }
-                            audioProgress
-                        }
                     }
-                    .padding(14)
-                    .background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 14))
-
-                    if audio.hasRecording(lessonID: lesson.id, sentenceIndex: sentenceIndex) {
+                    Button {
+                        audio.playSentence(lesson, index: index,
+                                           mediaDirectory: courses.mediaDirectory,
+                                           speed: Float(speed))
+                    } label: {
+                        Label("播放真人示范 / 单句音频", systemImage: "play.circle.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    if !line.isAligned && lesson.isImported {
+                        Button("本句尚未对齐 · 前往标记时间") { showAlignment = true }
+                            .font(.caption)
+                    }
+                    if audio.hasRecording(lessonID: lesson.id, sentenceIndex: index) {
                         Button {
-                            audio.playRecording(lessonID: lesson.id, sentenceIndex: sentenceIndex)
+                            audio.playRecording(lessonID: lesson.id, sentenceIndex: index)
                         } label: {
                             Label("回放我的录音", systemImage: "waveform")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        .tint(blue)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 18)
+                .padding(.top, 12)
             }
-
             HStack {
-                Text("第 \(sentenceIndex + 1) 句")
+                Text("第 \(index + 1) 句")
                 Slider(value: Binding(
-                    get: { Double(sentenceIndex) },
+                    get: { Double(index) },
                     set: { sentenceIndex = Int($0.rounded()) }
-                ), in: 0...Double(max(0, lesson.lines.count - 1)), step: 1)
+                ), in: 0...Double(max(1, lesson.lines.count - 1)), step: 1)
                 Text("共 \(lesson.lines.count) 句")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-
-            HStack(alignment: .center, spacing: 12) {
-                Button {
-                    sentenceIndex = max(0, sentenceIndex - 1)
-                } label: {
-                    controlLabel("backward.end.fill", "上一句")
+            HStack(spacing: 12) {
+                Button { sentenceIndex = max(0, index - 1) } label: {
+                    control("backward.end.fill", "上一句")
                 }
-                .disabled(sentenceIndex == 0)
-
+                .disabled(index == 0)
                 Spacer()
-
                 Button {
                     if audio.isRecording {
                         audio.stopRecording()
                     } else {
-                        audio.requestRecording(lessonID: lesson.id, sentenceIndex: sentenceIndex)
+                        audio.requestRecording(lessonID: lesson.id, sentenceIndex: index)
                     }
                 } label: {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         Image(systemName: audio.isRecording ? "stop.fill" : "mic.fill")
-                            .font(.system(size: 36, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 96, height: 96)
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(.black)
+                            .frame(width: compactPhone ? 72 : 92,
+                                   height: compactPhone ? 72 : 92)
                             .background(audio.isRecording ? Color.red : yellow, in: Circle())
-                            .shadow(color: yellow.opacity(0.3), radius: 10, y: 6)
                         Text(audio.isRecording ? "停止录音" : "点击录音")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
-
                 Spacer()
-
                 Button {
-                    if sentenceIndex < lesson.lines.count - 1 {
+                    if index < lesson.lines.count - 1 {
                         sentenceIndex += 1
                     } else {
                         step = .finish
                     }
                 } label: {
-                    controlLabel("forward.end.fill", sentenceIndex == lesson.lines.count - 1 ? "完成" : "下一句")
+                    control("forward.end.fill", index == lesson.lines.count - 1 ? "完成" : "下一句")
                 }
             }
             .buttonStyle(.plain)
         }
-        .padding(22)
+        .padding(compactPhone ? 12 : 20)
     }
 
-    private var finishPage: some View {
-        VStack(spacing: 20) {
+    private func finishPage(_ lesson: Lesson) -> some View {
+        let count = lesson.lines.filter {
+            audio.hasRecording(lessonID: lesson.id, sentenceIndex: $0.id)
+        }.count
+        return VStack(spacing: 20) {
             Spacer()
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 85))
-                .foregroundStyle(Color.green)
+                .font(.system(size: 78))
+                .foregroundStyle(.green)
             Text("Lesson Complete")
                 .font(.largeTitle.bold())
-            Text("你已经完成泛听、阅读和逐句跟读。\n录音保存在当前设备，可随时回来复听。")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            Text("已录制 \(count) / \(lesson.lines.count) 句\n录音保存在当前设备。")
                 .multilineTextAlignment(.center)
-
-            Text("已录音 \(recordingCount) / \(lesson.lines.count) 句")
-                .font(.headline)
-
+                .foregroundStyle(.secondary)
             Button {
                 let ids = Set(completed.split(separator: ",").map(String.init))
                 completed = ids.union([lesson.id]).sorted().joined(separator: ",")
-                saveProgress()
+                sessionCount += 1
+                UserDefaults.standard.set(sessionCount, forKey: storageKey("sessions"))
+                markActivity()
             } label: {
-                Label(completed.split(separator: ",").contains(Substring(lesson.id)) ? "已保存学习进度" : "保存完成记录", systemImage: "checkmark.circle")
+                Label(completed.split(separator: ",").contains(Substring(lesson.id))
+                      ? "已保存学习进度" : "保存完成记录", systemImage: "checkmark.circle")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .tint(blue)
-
-            Button("重新练习") {
-                sentenceIndex = 0
-                step = .listen
-            }
-            .buttonStyle(.bordered)
+            Button("重新学习") { step = .listen; sentenceIndex = 0 }
+                .buttonStyle(.bordered)
             Spacer()
         }
         .padding(24)
         .frame(maxWidth: .infinity)
     }
 
-    private var profilesSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("两个学习档案使用同一套 AI 配置，但课程、录音和能力等级独立保存于当前设备。")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    ForEach(["adult", "daughter"], id: \.self) { profile in
-                        Button {
-                            switchProfile(to: profile)
-                        } label: {
-                            HStack(spacing: 15) {
-                                Image(systemName: profile == "adult" ? "person.crop.circle.fill" : "face.smiling.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(blue)
-                                VStack(alignment: .leading, spacing: 5) {
-                                    Text(profile == "adult" ? "我的英语空间" : "女儿的英语空间")
-                                        .font(.headline)
-                                    Text(profile == "adult" ?
-                                         "CEFR \(Self.adultLevels[persistedLevel(for: profile) - 1])" :
-                                         "Kids Level \(persistedLevel(for: profile))")
-                                        .font(.subheadline)
-                                    Text("已完成 \(savedLessons(for: profile).count) 节课程")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if activeProfile == profile {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                }
-                            }
-                            .padding(18)
-                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18))
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    Divider()
-
-                    Text("当前档案 · \(profileTitle)")
-                        .font(.headline)
-                    HStack {
-                        Text("能力等级")
-                        Spacer()
-                        Text(levelLabel).fontWeight(.bold)
-                    }
-                    HStack(spacing: 25) {
-                        Button {
-                            abilityLevel = max(1, abilityLevel - 1)
-                        } label: {
-                            Image(systemName: "minus.circle.fill").font(.title)
-                        }
-                        Spacer()
-                        Text(levelLabel)
-                            .font(.title3.bold())
-                        Spacer()
-                        Button {
-                            abilityLevel = min(6, abilityLevel + 1)
-                        } label: {
-                            Image(systemName: "plus.circle.fill").font(.title)
-                        }
-                    }
-                    .disabled(false)
-                    Text("等级目前由家长手动设定，并非 AI 测评结果。后续可接入分项能力评估。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("本机储存：切换账号不会清除课程记录。删除 App 前请备份，当前版本尚未实现跨设备同步。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(22)
-            }
-            .navigationTitle("Family Profiles")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { showProfiles = false }
-                }
-            }
-        }
-    }
-
-    private var recordingCount: Int {
-        lesson.lines.filter { audio.hasRecording(lessonID: lesson.id, sentenceIndex: $0.id) }.count
-    }
-
-    private func controlLabel(_ symbol: String, _ title: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: symbol)
-                .font(.title2)
-                .foregroundStyle(Color(red: 0.29, green: 0.41, blue: 0.57))
-                .frame(width: 54, height: 54)
-                .background(Color(red: 0.90, green: 0.94, blue: 1), in: Circle())
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func sectionHeading(_ number: String, _ title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func heading(_ number: String, _ title: String, subtitle: String,
+                         lesson: Lesson) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text("STEP \(number) · \(lesson.category)")
                 .font(.caption.bold())
                 .foregroundStyle(blue)
             Text(title)
-                .font(.system(size: 27, weight: .semibold, design: .serif))
+                .font(.system(size: compactPhone ? 23 : 26, weight: .semibold, design: .serif))
             Text(subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
 
-    private var speedPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("播放速度")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Picker("播放速度", selection: $speed) {
-                Text("0.8×").tag(0.8)
-                Text("1.0×").tag(1.0)
-                Text("1.25×").tag(1.25)
+    @ViewBuilder
+    private func sourceLine(_ lesson: Lesson) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if !lesson.sourceName.isEmpty {
+                Text("来源：\(lesson.sourceName)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
-            .pickerStyle(.segmented)
+            if let url = URL(string: lesson.sourceURL),
+               url.scheme == "https" {
+                Link("打开原始资料", destination: url)
+                    .font(.caption)
+            }
+            if !lesson.rightsNote.isEmpty {
+                Text(lesson.rightsNote)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
         }
     }
 
+    private var speedPicker: some View {
+        Picker("语速", selection: $speed) {
+            Text("0.8×").tag(0.8)
+            Text("1.0×").tag(1.0)
+            Text("1.25×").tag(1.25)
+        }
+        .pickerStyle(.segmented)
+    }
+
     private var audioProgress: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 4) {
             Slider(value: Binding(
                 get: { min(audio.currentTime, max(1, audio.duration)) },
                 set: { audio.seek(to: $0) }
             ), in: 0...max(1, audio.duration))
             .tint(yellow)
-
             HStack {
                 Text(formatTime(audio.currentTime))
                 Spacer()
@@ -681,8 +676,180 @@ struct ContentView: View {
         }
     }
 
-    private func formatTime(_ value: TimeInterval) -> String {
-        let seconds = Int(max(0, value.isFinite ? value : 0))
-        return String(format: "%02d:%02d", seconds / 60, seconds % 60)
+    private func control(_ symbol: String, _ text: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: symbol)
+                .font(.title2)
+                .frame(width: 52, height: 52)
+                .background(Color(red: 0.90, green: 0.94, blue: 1), in: Circle())
+            Text(text).font(.caption)
+        }
+        .foregroundStyle(.secondary)
     }
+}
+
+// MARK: - Create a lesson by pasting a sentence-per-line transcript
+
+private struct NewLessonView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var title = ""
+    @State private var category = "FINANCE · B1–B2"
+    @State private var sourceName = "VOA Learning English"
+    @State private var sourceURL = ""
+    @State private var rightsNote = "Please verify that this recording and text are VOA-owned, not third-party material. Credit: learningenglish.voanews.com"
+    @State private var transcript = ""
+
+    let onCreate: (String, String, String, String, String, String) -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("课程信息") {
+                    TextField("课程标题", text: $title)
+                    TextField("分类 / 难度", text: $category)
+                    TextField("素材来源", text: $sourceName)
+                    TextField("原文网址（https://）", text: $sourceURL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+                Section("英文原文 · 每行一句") {
+                    Text("请从有合法使用权限的素材中整理英文原文，一行一个句子。可先只输入 5–10 句测试。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextEditor(text: $transcript)
+                        .frame(minHeight: 220)
+                        .font(.body)
+                }
+                Section("来源与授权记录") {
+                    TextEditor(text: $rightsNote)
+                        .frame(minHeight: 90)
+                }
+                Section {
+                    Text("创建后选择 MP3 / M4A。真人长录音还需逐句标记时间，才能准确跟读。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("导入英语课程")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("创建") {
+                        onCreate(title, category, sourceName, sourceURL,
+                                 rightsNote, transcript)
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty ||
+                              transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Manual sentence-level alignment for genuine long recordings
+
+private struct AlignmentView: View {
+    @Environment(\.dismiss) private var dismiss
+    let lessonID: String
+    @ObservedObject var courses: CourseStore
+    @ObservedObject var audio: AudioStudio
+    @State private var index = 0
+    @State private var speed = 1.0
+    @State private var translation = ""
+
+    private var lesson: Lesson? { courses.lesson(lessonID) }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 14) {
+                if let lesson, !lesson.lines.isEmpty {
+                    let line = lesson.lines[min(index, lesson.lines.count - 1)]
+                    Text("第 \(index + 1) / \(lesson.lines.count) 句")
+                        .font(.headline)
+                    Text(line.english)
+                        .font(.title3.bold())
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        Text("起点：\(stamp(line.start))")
+                        Spacer()
+                        Text("终点：\(stamp(line.end))")
+                    }
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    HStack {
+                        Button(audio.isPlaying ? "暂停" : "播放整篇") {
+                            audio.toggleFull(lesson, mediaDirectory: courses.mediaDirectory,
+                                             speed: Float(speed))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Button("试听本句") {
+                            audio.playSentence(lesson, index: index,
+                                               mediaDirectory: courses.mediaDirectory,
+                                               speed: Float(speed))
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    Slider(value: Binding(
+                        get: { min(audio.currentTime, max(1, audio.duration)) },
+                        set: { audio.seek(to: $0) }
+                    ), in: 0...max(1, audio.duration))
+                    HStack {
+                        Text("播放位置 \(stamp(audio.currentTime))")
+                        Spacer()
+                        Text("总时长 \(stamp(audio.duration))")
+                    }
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Button("设为本句起点") {
+                            courses.setBoundary(lessonID: lessonID, lineIndex: index,
+                                                isStart: true, seconds: audio.currentTime)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Button("设为本句终点") {
+                            courses.setBoundary(lessonID: lessonID, lineIndex: index,
+                                                isStart: false, seconds: audio.currentTime)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    HStack {
+                        Button("上一句") { index = max(0, index - 1) }
+                            .disabled(index == 0)
+                        Spacer()
+                        Button("下一句") { index = min(lesson.lines.count - 1, index + 1) }
+                            .disabled(index >= lesson.lines.count - 1)
+                    }
+                    .buttonStyle(.bordered)
+                    Divider()
+                    Text("操作：播放音频 → 拖动到句子起点 → 标记起点 → 拖动到终点 → 标记终点 → 试听。时间戳自动保存在本机。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                } else {
+                    Text("找不到课程。")
+                }
+            }
+            .padding(20)
+            .navigationTitle("逐句时间对齐")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") { audio.stopPlayback(); dismiss() }
+                }
+            }
+            .onDisappear { audio.stopPlayback() }
+        }
+    }
+
+    private func stamp(_ time: Double?) -> String {
+        guard let time, time.isFinite else { return "--:--.-" }
+        let value = max(0, time)
+        return String(format: "%02d:%04.1f", Int(value) / 60, value.truncatingRemainder(dividingBy: 60))
+    }
+}
+
+private func formatTime(_ time: Double) -> String {
+    let value = Int(max(0, time.isFinite ? time : 0))
+    return String(format: "%02d:%02d", value / 60, value % 60)
 }
