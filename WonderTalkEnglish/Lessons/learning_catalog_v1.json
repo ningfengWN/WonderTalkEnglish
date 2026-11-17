@@ -13,7 +13,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「家庭与作息」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「家庭与作息」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e02",
@@ -29,7 +48,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「早餐与食物」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「早餐与食物」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e03",
@@ -45,7 +83,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「饮食习惯」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「饮食习惯」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e04",
@@ -61,7 +118,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「改变安排」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「改变安排」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e05",
@@ -77,7 +153,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「简短日常对话」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「简短日常对话」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e06",
@@ -93,7 +188,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「咖啡馆点餐」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「咖啡馆点餐」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e07",
@@ -109,7 +223,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「餐厅预订」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「餐厅预订」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e08",
@@ -125,7 +258,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「购物与尺码」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「购物与尺码」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e09",
@@ -141,7 +293,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「商场与地点」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「商场与地点」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e10",
@@ -157,7 +328,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「公共交通广播」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「公共交通广播」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e11",
@@ -173,7 +363,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「聚会初识」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「聚会初识」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e12",
@@ -189,7 +398,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「同事介绍」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「同事介绍」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e13",
@@ -205,7 +433,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「会议改期」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「会议改期」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e14",
@@ -221,7 +468,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「老朋友重逢」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「老朋友重逢」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e15",
@@ -237,7 +503,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「工作生活平衡」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「工作生活平衡」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e16",
@@ -253,7 +538,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「药店沟通」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「药店沟通」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "e17",
@@ -269,7 +573,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「职业经历」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「职业经历」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e18",
@@ -285,7 +608,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「旅行经历」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「旅行经历」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e19",
@@ -301,7 +643,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「理想职业」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「理想职业」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "e20",
@@ -317,7 +678,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「城市生活」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「城市生活」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "elllo_noncommercial_educational_check",
+    "catalogVersion": 2
   },
   {
     "id": "f01",
@@ -333,7 +713,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「收拾玩具」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「收拾玩具」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "f02",
@@ -349,7 +748,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「点心时间」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「点心时间」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "f03",
@@ -365,7 +783,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「日常动作」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「日常动作」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "f04",
@@ -381,7 +818,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「海洋动物」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「海洋动物」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "f05",
@@ -397,7 +853,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「海洋冒险」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「海洋冒险」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "f06",
@@ -413,7 +888,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「帮助与友谊」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「帮助与友谊」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "f07",
@@ -429,7 +923,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够在真实生活中围绕「勇气与合作」听懂提问并自然回应。",
+      "steps": [
+        "首次盲听并复述大意",
+        "对照原站文字稿查漏",
+        "定位难句并跟读",
+        "录音比较句子节奏",
+        "使用同主题问题自由对话"
+      ],
+      "comprehensionPrompts": [
+        "这段材料围绕「勇气与合作」发生了什么？",
+        "说话者提出了哪些问题、回应或选择？",
+        "如果换成你自己的经历，你会怎样用英语回应？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "personal_noncommercial_only",
+    "catalogVersion": 2
   },
   {
     "id": "n01",
@@ -445,7 +958,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「通胀与利率」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「通胀与利率」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "no_bulk_copy_without_permission",
+    "catalogVersion": 2
   },
   {
     "id": "n02",
@@ -461,7 +993,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「就业与工资」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「就业与工资」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "no_bulk_copy_without_permission",
+    "catalogVersion": 2
   },
   {
     "id": "n03",
@@ -477,7 +1028,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「货币政策预期」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「货币政策预期」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "no_bulk_copy_without_permission",
+    "catalogVersion": 2
   },
   {
     "id": "n04",
@@ -493,7 +1063,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「AI投资与市场情绪」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「AI投资与市场情绪」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "no_bulk_copy_without_permission",
+    "catalogVersion": 2
   },
   {
     "id": "n05",
@@ -509,7 +1098,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「公司业绩」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「公司业绩」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "source_link_only",
+    "catalogVersion": 2
   },
   {
     "id": "p01",
@@ -525,7 +1133,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「美联储新闻发布会」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「美联储新闻发布会」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "public_domain_unless_noted",
+    "catalogVersion": 2
   },
   {
     "id": "p02",
@@ -541,7 +1168,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「财报电话会」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「财报电话会」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "source_link_only",
+    "catalogVersion": 2
   },
   {
     "id": "p03",
@@ -557,7 +1203,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「AI云财报」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「AI云财报」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "source_link_only",
+    "catalogVersion": 2
   },
   {
     "id": "p04",
@@ -573,7 +1238,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「AI基础设施财报」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「AI基础设施财报」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "source_link_only",
+    "catalogVersion": 2
   },
   {
     "id": "p05",
@@ -589,7 +1273,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「财报会议」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「财报会议」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "source_link_only",
+    "catalogVersion": 2
   },
   {
     "id": "h01",
@@ -605,7 +1308,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「欧洲近现代史导论」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「欧洲近现代史导论」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "cc_by_nc_sa_3_with_third_party_exceptions",
+    "catalogVersion": 2
   },
   {
     "id": "h02",
@@ -621,7 +1343,26 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「绝对君主制与国家」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「绝对君主制与国家」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "cc_by_nc_sa_3_with_third_party_exceptions",
+    "catalogVersion": 2
   },
   {
     "id": "h03",
@@ -637,6 +1378,25 @@
     "materialStatus": "external_link_only",
     "audioFilename": null,
     "bundledAudioStem": null,
-    "lines": []
+    "lines": [],
+    "studyGuide": {
+      "goal": "能够听懂或读懂围绕「荷兰与英国制度史」的主要事实、论点与证据。",
+      "steps": [
+        "确认背景与关键概念",
+        "首次泛听抓住核心观点",
+        "阅读原文并澄清术语",
+        "再次听原音频",
+        "用中文说明结论与依据"
+      ],
+      "comprehensionPrompts": [
+        "材料对「荷兰与英国制度史」提出的核心判断是什么？",
+        "它引用了哪些事实、数据或历史依据？",
+        "有哪些可能的解释、局限或尚未解决的问题？"
+      ],
+      "transcriptStatus": "not_bundled",
+      "audioStatus": "not_bundled"
+    },
+    "licensePolicy": "cc_by_nc_sa_3_with_third_party_exceptions",
+    "catalogVersion": 2
   }
 ]
