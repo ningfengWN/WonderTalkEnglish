@@ -299,9 +299,37 @@ struct ContentView: View {
             }
             .accessibilityLabel("我的学习账号")
             Menu {
-                Section("课程") {
-                    ForEach(courses.lessons) { item in
+                Section("原有课程 / 自建课程") {
+                    ForEach(courses.lessons.filter { item in
+                        !["e","f","n","p","h"].contains(String(item.id.prefix(1))) ||
+                        item.id.count != 3
+                    }) { item in
                         Button(item.title) { lessonID = item.id }
+                    }
+                }
+                Section("日常口语 · 20") {
+                    ForEach(courses.lessons.filter { $0.category == "DAILY · SPEAKING" }) { item in
+                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
+                    }
+                }
+                Section("亲子英语 · 7") {
+                    ForEach(courses.lessons.filter { $0.category == "FAMILY · SPEAKING" }) { item in
+                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
+                    }
+                }
+                Section("财经新闻 · 5") {
+                    ForEach(courses.lessons.filter { $0.category == "FINANCE · UNDERSTANDING" }) { item in
+                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
+                    }
+                }
+                Section("财报与美联储 · 5") {
+                    ForEach(courses.lessons.filter { $0.category == "EARNINGS/FED · UNDERSTANDING" }) { item in
+                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
+                    }
+                }
+                Section("欧洲历史 · 3") {
+                    ForEach(courses.lessons.filter { $0.category == "HISTORY · UNDERSTANDING" }) { item in
+                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
                     }
                 }
                 Section("课程管理") {
@@ -382,7 +410,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                Text("当前是外部资料目录条目。未附带真人音频、逐字稿或句子时间轴，不能直接使用 App 内播放器或跟读。")
+                Text(lesson.audioFilename == nil ? "当前是外部资料索引，未附带音频和逐字稿。请先通过原网站学习。" : "已导入本地音频，但尚无逐句原文；导入文字后可进入播放器与跟读训练。")
                     .font(.subheadline)
                 Text(lesson.studyMode == "speaking"
                     ? "建议：原站泛听 → 阅读原站文字稿 → 精听 → 跟读 → 日常复述和互动。"
