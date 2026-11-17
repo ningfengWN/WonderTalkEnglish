@@ -57,10 +57,9 @@ struct ContentView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                blue.ignoresSafeArea()
-                VStack(spacing: compactPhone ? 8 : 14) {
+        // Keep interactive content inside the system safe area. Only the
+        // background extends behind the iPhone X notch and Home Indicator.
+        VStack(spacing: compactPhone ? 8 : 14) {
                     header
                     stepsBar
                     Group {
@@ -80,12 +79,11 @@ struct ContentView: View {
                     .background(.white, in: RoundedRectangle(cornerRadius: 26))
                     .padding(.horizontal, compactPhone ? 8 : 12)
                     .padding(.bottom, compactPhone ? 6 : 10)
-                }
-                .frame(maxWidth: 800)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
         }
+        .frame(maxWidth: 800)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .safeAreaPadding(.top, compactPhone ? 12 : 8)
+        .background { blue.ignoresSafeArea() }
         .preferredColorScheme(.light)
         .onAppear { loadProfile() }
         .sheet(isPresented: $showAccount) { accountSheet }
@@ -314,7 +312,7 @@ struct ContentView: View {
             .accessibilityLabel("课程库与导入")
         }
         .padding(.horizontal, 18)
-        .padding(.top, compactPhone ? 2 : 10)
+        .padding(.top, 4)
     }
 
     private var stepsBar: some View {
