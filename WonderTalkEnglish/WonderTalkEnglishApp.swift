@@ -30,10 +30,7 @@ private struct FamilyEntryView: View {
     }
 
     private var profileSelection: some View {
-        ZStack {
-            blue.ignoresSafeArea()
-
-            ScrollView {
+        ScrollView {
                 VStack(spacing: 24) {
                     Spacer(minLength: 32)
                     Image(systemName: "bubble.left.and.bubble.right.fill")
@@ -76,8 +73,10 @@ private struct FamilyEntryView: View {
                 .frame(maxWidth: 500)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 24)
-            }
         }
+        .safeAreaPadding(.top, 12)
+        .safeAreaPadding(.bottom, 12)
+        .background { blue.ignoresSafeArea() }
     }
 
     private func profileButton(id: String, icon: String, title: String, subtitle: String) -> some View {
