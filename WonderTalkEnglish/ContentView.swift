@@ -421,13 +421,13 @@ struct ContentView: View {
                     Text("学习目标").font(.headline)
                     Text(guide.goal).font(.subheadline)
                     Text("训练流程").font(.headline)
-                    ForEach(Array(guide.steps.enumerated()), id: \.offset) { index, instruction in
-                        Text("\(index + 1). \(instruction)")
+                    ForEach(guide.steps.indices, id: \.self) { index in
+                        Text("\(index + 1). \(guide.steps[index])")
                             .font(.subheadline)
                     }
                     Text("理解与应用").font(.headline)
-                    ForEach(Array(guide.comprehensionPrompts.enumerated()), id: \.offset) { index, question in
-                        Text("\(index + 1). \(question)")
+                    ForEach(guide.comprehensionPrompts.indices, id: \.self) { index in
+                        Text("\(index + 1). \(guide.comprehensionPrompts[index])")
                             .font(.subheadline)
                     }
                 }
