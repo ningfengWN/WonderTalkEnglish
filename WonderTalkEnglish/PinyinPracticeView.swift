@@ -214,6 +214,14 @@ struct PinyinPracticeView: View {
     private var cards: [PinyinCard] { PinyinCard.all.filter { $0.group == group } }
     private var card: PinyinCard { cards[min(index, cards.count - 1)] }
     private var choices: [String] { group == 0 ? ["b", "p", "d", "q"] : ["zh", "ch", "sh", "z", "c", "s"] }
+    private var contrastWords: String {
+        switch card.initial {
+        case "zh", "z": return "知，资。知，资。"
+        case "ch", "c": return "吃，疵。吃，疵。"
+        case "sh", "s": return "诗，丝。诗，丝。"
+        default: return ""
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -374,6 +382,16 @@ struct PinyinPracticeView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+
+            if group == 1 {
+                Button {
+                    coach.demonstrate(contrastWords)
+                } label: {
+                    Label("听对比：先翘舌，后平舌", systemImage: "ear.badge.waveform")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
 
             Button {
                 if coach.recording {
