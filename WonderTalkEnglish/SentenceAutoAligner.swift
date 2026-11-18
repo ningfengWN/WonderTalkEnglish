@@ -36,6 +36,7 @@ final class SentenceAutoAligner: ObservableObject {
 
     private var recognizer: SFSpeechRecognizer?
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var timeoutTask: Task<Void, Never>?
     private var chunks: [AlignmentAudioChunk] = []
     private var chunkIndex = 0
     private var words: [TimedWord] = []
@@ -48,6 +49,8 @@ final class SentenceAutoAligner: ObservableObject {
         generation += 1
         recognitionTask?.cancel()
         recognitionTask = nil
+        timeoutTask?.cancel()
+        timeoutTask = nil
         working = false
         cleanTemporaryFiles()
         chunks = []
@@ -199,12 +202,22 @@ final class SentenceAutoAligner: ObservableObject {
                     self.recognizedText += (self.recognizedText.isEmpty ? "" : " ") +
                         result.bestTranscription.formattedString
                     self.recognitionTask = nil
+                    self.timeoutTask?.cancel()
+                    self.timeoutTask = nil
                     self.chunkIndex += 1
                     self.runNextChunk(token: token)
                 } else if let error {
                     self.finishWithError("识别第 \(index + 1) 段失败：\(error.localizedDescription)。请重试或手动对齐。")
                 }
             }
+        }
+        timeoutTask?.cancel()
+        timeoutTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: 90_000_000_000) }
+            catch { return }
+            guard let self, self.generation == token,
+                  self.working, self.chunkIndex == index else { return }
+            self.finishWithError("第 \(index + 1) 段识别超时，请重试或手动对齐。")
         }
     }
 
@@ -213,6 +226,8 @@ final class SentenceAutoAligner: ObservableObject {
             finishWithError("课程已发生变化，请重试。")
             return
         }
+        timeoutTask?.cancel()
+        timeoutTask = nil
         progress = "正在匹配逐句文字…"
         suggestions = Self.match(lesson.lines, words: words, duration: duration)
         working = false
@@ -231,6 +246,8 @@ final class SentenceAutoAligner: ObservableObject {
         working = false
         recognitionTask?.cancel()
         recognitionTask = nil
+        timeoutTask?.cancel()
+        timeoutTask = nil
         cleanTemporaryFiles()
         chunks = []
     }
