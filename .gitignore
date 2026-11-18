@@ -5,3 +5,7 @@ WonderTalkEnglish/Audio/wt_*_full.mp3
 # Local data packages and reports
 local_course_data/
 .DS_Store
+
+# Local WhisperX sentence timestamps and model environment
+WonderTalkEnglish/Lessons/private_course_alignment.json
+.whisperx-venv/
