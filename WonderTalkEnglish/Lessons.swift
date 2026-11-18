@@ -166,6 +166,8 @@ final class CourseStore: ObservableObject {
         let privateURL = Bundle.main.url(forResource: "private_course_media",
                                          withExtension: "json", subdirectory: "Lessons") ??
                          Bundle.main.url(forResource: "private_course_media",
+                                         withExtension: "json", subdirectory: "WonderTalkEnglish/Lessons") ??
+                         Bundle.main.url(forResource: "private_course_media",
                                          withExtension: "json")
         if let privateURL, let data = try? Data(contentsOf: privateURL),
            let manifest = try? JSONDecoder().decode(PrivateCourseMediaManifest.self, from: data),
@@ -187,6 +189,8 @@ final class CourseStore: ObservableObject {
                     let filename = "\(stem)_full"
                     let exists = Bundle.main.url(forResource: filename, withExtension: "mp3",
                                                   subdirectory: "Audio") != nil ||
+                                 Bundle.main.url(forResource: filename, withExtension: "mp3",
+                                                  subdirectory: "WonderTalkEnglish/Audio") != nil ||
                                  Bundle.main.url(forResource: filename, withExtension: "mp3") != nil
                     if exists { lesson.bundledAudioStem = stem }
                 }
