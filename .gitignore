@@ -1,0 +1,7 @@
+# Private, user-provided learning media (not for public GitHub)
+WonderTalkEnglish/Lessons/private_course_media.json
+WonderTalkEnglish/Audio/wt_*_full.mp3
+
+# Local data packages and reports
+local_course_data/
+.DS_Store
