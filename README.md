@@ -66,3 +66,9 @@ python3 tools/download_study_materials.py \
 导入 App：在 iPhone/iPad 文件 App 中取得合法保存的 MP3/M4A → 打开相应课程 → 导入本地音频；文字稿可按句分行粘贴到“导入课程原文”。音频与文字稿仍需逐句时间对齐。下载的 `source_page.html` 是私人离线保存的网页副本，不代表已清理成可直接导入的逐句原文。
 
 **许可提醒：**耶鲁课程多数为 CC BY-NC-SA 3.0（注意第三方内容及署名），ELLLO 允许一定范围的非商业教育使用；British Council 主要允许个人非商业使用，不得擅自重新发布或改编；商业新闻、公司财报音视频及视频平台素材需按各自条款处理。脚本默认拒绝自动下载这些其他来源，不绕过版权保护、付费墙或技术限制。使用前阅读各网站许可。下载文件不可提交到公共仓库。
+
+## 英语原始听力资料获取 Skill
+
+当需要为课程查找原始音频与官方逐字稿、核验版权、个人下载、整理逐句文本、对齐时间并导入 App 时，使用 [English Listening Material Acquisition](.agents/skills/english-listening-material-acquisition/SKILL.md)。项目根目录的 `AGENTS.md` 已登记本技能，模板见该 Skill 的 `references/lesson-manifest.example.json`。
+
+注意：存入 GitHub 的是可复用**技能文档、校验约定和已有下载脚本**，并不代表自动下载了 40 份第三方媒体或完成安装验证。
