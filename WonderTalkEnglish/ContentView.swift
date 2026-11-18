@@ -345,7 +345,7 @@ struct ContentView: View {
                         }
                     }
                     if let lesson, !lesson.lines.isEmpty {
-                        Button("为当前课程对齐句子时间", systemImage: "waveform.path") {
+                        Button("自动 / 手动逐句对齐", systemImage: "waveform.path") {
                             showAlignment = true
                         }
                     }
@@ -970,7 +970,7 @@ private struct AlignmentView: View {
                     }
                     .buttonStyle(.bordered)
                     Divider()
-                    Text("操作：播放音频 → 拖动到句子起点 → 标记起点 → 拖动到终点 → 标记终点 → 试听。时间戳自动保存在本机。")
+                    Text("自动对齐后可以在这里试听并修正单句边界；手动标记的时间会立即保存在本机。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
