@@ -260,8 +260,8 @@ final class CourseStore: ObservableObject {
             }
 
             if let encoded = item.audioBase64, !encoded.isEmpty {
-                let ext = (item.audioFilename ?? "").split(separator: ".").last.map(String.init)?
-                    .lowercased() ?? ""
+                let ext = URL(fileURLWithPath: item.audioFilename ?? "audio.unknown")
+                    .pathExtension.lowercased()
                 guard ["mp3", "m4a", "wav", "aiff", "caf"].contains(ext),
                       let audioData = Data(base64Encoded: encoded),
                       !audioData.isEmpty, audioData.count <= 25_000_000 else {
