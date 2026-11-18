@@ -22,6 +22,9 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if let url = Bundle.main.url(forResource: stem, withExtension: ext, subdirectory: "Audio") {
                 return url
             }
+            if let url = Bundle.main.url(forResource: stem, withExtension: ext, subdirectory: "WonderTalkEnglish/Audio") {
+                return url
+            }
             if let url = Bundle.main.url(forResource: stem, withExtension: ext) {
                 return url
             }

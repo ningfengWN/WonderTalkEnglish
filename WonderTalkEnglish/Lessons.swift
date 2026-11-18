@@ -76,8 +76,23 @@ struct LocalStudyImportSummary {
     }
 }
 
+/// Optional, privately installed lesson assets. The JSON and MP3 files are
+/// excluded from Git so third-party learning materials stay on the user's Mac.
+private struct PrivateCourseMediaManifest: Decodable {
+    let formatVersion: Int
+    let items: [PrivateCourseMediaItem]
+}
+
+private struct PrivateCourseMediaItem: Decodable {
+    let id: String
+    let sourceURL: String
+    let lines: [String]?
+    let bundledAudioStem: String?
+}
+
 @MainActor
 final class CourseStore: ObservableObject {
+    private static let removedCatalogIDs: Set<String> = ["e17"]
     @Published private(set) var lessons: [Lesson] = []
     @Published var errorMessage: String?
 
@@ -106,8 +121,8 @@ final class CourseStore: ObservableObject {
         let bundled = bundledLessons()
         // Preserve existing user-imported audio, aligned sentences and translations.
         // Add new catalog entries without wiping progress or editable courses.
-        var byID = Dictionary(uniqueKeysWithValues: bundled.map { ($0.id, $0) })
-        for item in saved {
+        var byID = Dictionary(uniqueKeysWithValues: bundled.filter { !Self.removedCatalogIDs.contains($0.id) }.map { ($0.id, $0) })
+        for item in saved where !Self.removedCatalogIDs.contains(item.id) {
             if let original = byID[item.id] {
                 var merged = original
                 if item.audioFilename != nil { merged.audioFilename = item.audioFilename }
@@ -142,7 +157,47 @@ final class CourseStore: ObservableObject {
                 all.append(item)
             }
         }
-        return all.sorted { $0.id < $1.id }
+        // The public repository stores only metadata. On a local Xcode build,
+        // privately copied audio/transcripts may be added as bundle resources.
+        // Match BOTH lesson ID and original URL to avoid wrong lesson pairing.
+        var byID = Dictionary(uniqueKeysWithValues: all.filter {
+            !Self.removedCatalogIDs.contains($0.id)
+        }.map { ($0.id, $0) })
+        let privateURL = Bundle.main.url(forResource: "private_course_media",
+                                         withExtension: "json", subdirectory: "Lessons") ??
+                         Bundle.main.url(forResource: "private_course_media",
+                                         withExtension: "json", subdirectory: "WonderTalkEnglish/Lessons") ??
+                         Bundle.main.url(forResource: "private_course_media",
+                                         withExtension: "json")
+        if let privateURL, let data = try? Data(contentsOf: privateURL),
+           let manifest = try? JSONDecoder().decode(PrivateCourseMediaManifest.self, from: data),
+           manifest.formatVersion == 1 {
+            for item in manifest.items {
+                guard !Self.removedCatalogIDs.contains(item.id),
+                      var lesson = byID[item.id],
+                      lesson.sourceURL == item.sourceURL else { continue }
+                if let lines = item.lines {
+                    let clean = lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+                    if !clean.isEmpty {
+                        lesson.lines = clean.enumerated().map {
+                            LessonLine(id: $0.offset, english: $0.element, chinese: "")
+                        }
+                    }
+                }
+                if let stem = item.bundledAudioStem, !stem.isEmpty {
+                    let filename = "\(stem)_full"
+                    let exists = Bundle.main.url(forResource: filename, withExtension: "mp3",
+                                                  subdirectory: "Audio") != nil ||
+                                 Bundle.main.url(forResource: filename, withExtension: "mp3",
+                                                  subdirectory: "WonderTalkEnglish/Audio") != nil ||
+                                 Bundle.main.url(forResource: filename, withExtension: "mp3") != nil
+                    if exists { lesson.bundledAudioStem = stem }
+                }
+                byID[item.id] = lesson
+            }
+        }
+        return byID.values.sorted { $0.id < $1.id }
     }
 
     func lesson(_ id: String) -> Lesson? {
@@ -356,7 +411,7 @@ final class CourseStore: ObservableObject {
     func resetCatalog() {
         // Never automatically delete imported audio or recordings.
         let bundled = bundledLessons()
-        lessons = bundled
+        lessons = bundled.filter { !Self.removedCatalogIDs.contains($0.id) }
         save()
     }
 }
