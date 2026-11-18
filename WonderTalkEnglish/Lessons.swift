@@ -141,7 +141,9 @@ final class CourseStore: ObservableObject {
             if let original = byID[item.id] {
                 var merged = original
                 if item.audioFilename != nil { merged.audioFilename = item.audioFilename }
-                if !item.lines.isEmpty && item.id != "e02" { merged.lines = item.lines }
+                if !item.lines.isEmpty && (item.id != "e02" || original.lines.isEmpty) {
+                    merged.lines = item.lines
+                }
                 if let duration = original.durationSeconds ?? item.durationSeconds {
                     merged.durationSeconds = duration
                 }
