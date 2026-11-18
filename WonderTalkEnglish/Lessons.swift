@@ -140,7 +140,9 @@ final class CourseStore: ObservableObject {
         for item in saved where !Self.removedCatalogIDs.contains(item.id) {
             if let original = byID[item.id] {
                 var merged = original
-                if item.audioFilename != nil { merged.audioFilename = item.audioFilename }
+                if item.audioFilename != nil && !(item.id == "e02" && original.bundledAudioStem != nil) {
+                    merged.audioFilename = item.audioFilename
+                }
                 if !item.lines.isEmpty && (item.id != "e02" || original.lines.isEmpty) {
                     merged.lines = item.lines
                 }
