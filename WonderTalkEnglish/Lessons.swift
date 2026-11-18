@@ -40,6 +40,19 @@ struct Lesson: Identifiable, Codable, Equatable {
     var studyGuide: StudyGuide? = nil
     var licensePolicy: String? = nil
     var catalogVersion: Int? = nil
+    var durationSeconds: Double? = nil
+
+    var isKnowledgeEnglish: Bool {
+        category.contains("UNDERSTANDING") || studyMode == "understanding"
+    }
+
+    var durationLabel: String {
+        guard let durationSeconds, durationSeconds > 0, durationSeconds.isFinite else {
+            return "时长待补充"
+        }
+        let seconds = Int(durationSeconds.rounded())
+        return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
 
     var isImported: Bool { bundledAudioStem == nil }
     var fullAudioStem: String? { bundledAudioStem.map { "\($0)_full" } }
@@ -88,11 +101,12 @@ private struct PrivateCourseMediaItem: Decodable {
     let sourceURL: String
     let lines: [String]?
     let bundledAudioStem: String?
+    let durationSeconds: Double?
 }
 
 @MainActor
 final class CourseStore: ObservableObject {
-    private static let removedCatalogIDs: Set<String> = ["e17"]
+    private static let removedCatalogIDs: Set<String> = ["e17", "e20", "rates", "renaissance"]
     @Published private(set) var lessons: [Lesson] = []
     @Published var errorMessage: String?
 
@@ -126,7 +140,8 @@ final class CourseStore: ObservableObject {
             if let original = byID[item.id] {
                 var merged = original
                 if item.audioFilename != nil { merged.audioFilename = item.audioFilename }
-                if !item.lines.isEmpty { merged.lines = item.lines }
+                if !item.lines.isEmpty && item.id != "e02" { merged.lines = item.lines }
+                if let duration = original.durationSeconds { merged.durationSeconds = duration }
                 byID[item.id] = merged
             } else {
                 byID[item.id] = item
@@ -142,7 +157,7 @@ final class CourseStore: ObservableObject {
     private func bundledLessons() -> [Lesson] {
         var urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Lessons") ?? []
         if urls.isEmpty {
-            for name in ["rates", "renaissance", "learning_catalog_v1"] {
+            for name in ["learning_catalog_v1"] {
                 if let url = Bundle.main.url(forResource: name, withExtension: "json") {
                     urls.append(url)
                 }
@@ -184,6 +199,9 @@ final class CourseStore: ObservableObject {
                             LessonLine(id: $0.offset, english: $0.element, chinese: "")
                         }
                     }
+                }
+                if let duration = item.durationSeconds, duration > 0 {
+                    lesson.durationSeconds = duration
                 }
                 if let stem = item.bundledAudioStem, !stem.isEmpty {
                     let filename = "\(stem)_full"
