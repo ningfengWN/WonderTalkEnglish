@@ -896,13 +896,22 @@ private struct AlignmentView: View {
     @State private var index = 0
     @State private var speed = 1.0
     @State private var translation = ""
+    @StateObject private var aligner = SentenceAutoAligner()
+    @State private var allowAppleOnline = false
+    @State private var overwriteManual = false
+    @State private var showSaveConfirmation = false
+    @State private var saveNotice = ""
 
     private var lesson: Lesson? { courses.lesson(lessonID) }
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 14) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
                 if let lesson, !lesson.lines.isEmpty {
+                    autoAlignmentPanel(lesson)
+                    Divider()
+                    Text("手动微调").font(.headline)
                     let line = lesson.lines[min(index, lesson.lines.count - 1)]
                     Text("第 \(index + 1) / \(lesson.lines.count) 句")
                         .font(.headline)
@@ -970,13 +979,103 @@ private struct AlignmentView: View {
                 }
             }
             .padding(20)
+            }
             .navigationTitle("逐句时间对齐")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") { audio.stopPlayback(); dismiss() }
                 }
             }
-            .onDisappear { audio.stopPlayback() }
+            .confirmationDialog("确认保存自动对齐结果？", isPresented: $showSaveConfirmation,
+                                titleVisibility: .visible) {
+                Button("保存匹配的句子") {
+                    let count = courses.applyAutoAlignment(
+                        lessonID: lessonID, suggestions: aligner.suggestions,
+                        overwriteExisting: overwriteManual)
+                    saveNotice = "已保存 \(count) 句时间区间。其他句子和原有录音不受影响。"
+                }
+            } message: {
+                Text(overwriteManual
+                     ? "将覆盖已手动对齐的句子时间；英文原文和音频不变。"
+                     : "只填写尚未对齐的句子；原有手动对齐时间不变。")
+            }
+            .onDisappear { aligner.cancel(); audio.stopPlayback() }
+        }
+    }
+
+    private func autoAlignmentPanel(_ lesson: Lesson) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("自动逐句对齐", systemImage: "waveform.badge.magnifyingglass")
+                .font(.headline)
+            Text("用英语语音识别获得单词时间戳，再匹配已导入的逐句英文。只生成建议，不会自动覆盖原文或时间。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Toggle("允许 Apple 在线识别（仅设备不支持离线时）", isOn: $allowAppleOnline)
+                .font(.caption)
+            Text("默认优先设备端识别。开启在线选项后，如设备不支持离线识别，音频可能发送至 Apple 的语音识别服务。")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Button {
+                audio.stopPlayback()
+                aligner.start(lesson: lesson, mediaDirectory: courses.mediaDirectory,
+                              allowAppleOnline: allowAppleOnline)
+                saveNotice = ""
+            } label: {
+                Label(aligner.working ? "正在自动对齐…" : "开始自动对齐整篇",
+                      systemImage: "waveform.path")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(aligner.working)
+            if aligner.working {
+                ProgressView(aligner.progress)
+                Button("取消识别") { aligner.cancel() }
+                    .buttonStyle(.bordered)
+            }
+            if !aligner.status.isEmpty {
+                Text(aligner.status)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            if !aligner.suggestions.isEmpty {
+                Toggle("覆盖已有手动时间戳", isOn: $overwriteManual)
+                    .font(.subheadline)
+                Text("预览：点击“试听”检查切句位置。匹配率表示文字吻合度，不是发音评分。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ForEach(Array(aligner.suggestions.prefix(8))) { item in
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("第 \(item.index + 1) 句 · \(stamp(item.start)) – \(stamp(item.end))")
+                                .font(.caption.bold())
+                            Text("匹配 \(item.matchedWords)/\(item.expectedWords) 词")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("试听") {
+                            index = item.index
+                            audio.previewAlignment(lesson, start: item.start, end: item.end,
+                                                   mediaDirectory: courses.mediaDirectory)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+                if aligner.suggestions.count > 8 {
+                    Text("其余 \(aligner.suggestions.count - 8) 句将在保存后可逐句试听、手动微调。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Button("确认并保存 \(aligner.suggestions.count) 句的建议") {
+                    showSaveConfirmation = true
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            if !saveNotice.isEmpty {
+                Text(saveNotice)
+                    .font(.subheadline)
+                    .foregroundStyle(.green)
+            }
         }
     }
 
