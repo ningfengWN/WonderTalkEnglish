@@ -74,6 +74,7 @@ struct LocalStudyBundleItem: Decodable {
     let lines: [String]?
     let audioFilename: String?
     let audioBase64: String?
+    let durationSeconds: Double?
 }
 
 struct LocalStudyImportSummary {
@@ -141,7 +142,9 @@ final class CourseStore: ObservableObject {
                 var merged = original
                 if item.audioFilename != nil { merged.audioFilename = item.audioFilename }
                 if !item.lines.isEmpty && item.id != "e02" { merged.lines = item.lines }
-                if let duration = original.durationSeconds { merged.durationSeconds = duration }
+                if let duration = original.durationSeconds ?? item.durationSeconds {
+                    merged.durationSeconds = duration
+                }
                 byID[item.id] = merged
             } else {
                 byID[item.id] = item
@@ -332,6 +335,10 @@ final class CourseStore: ObservableObject {
                 }
             }
 
+            if let seconds = item.durationSeconds, seconds.isFinite, seconds > 0 {
+                lessons[i].durationSeconds = seconds
+                updatedIDs.insert(item.id)
+            }
             if let encoded = item.audioBase64, !encoded.isEmpty {
                 let ext = URL(fileURLWithPath: item.audioFilename ?? "audio.unknown")
                     .pathExtension.lowercased()
