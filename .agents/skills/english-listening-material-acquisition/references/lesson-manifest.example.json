@@ -1,0 +1,54 @@
+{
+  "lesson_id": "h01",
+  "title": "European Civilization — Introduction",
+  "source": {
+    "publisher": "Open Yale Courses",
+    "canonical_url": "https://oyc.yale.edu/history/hist-202/lecture-1",
+    "checked_at": null,
+    "speaker": null,
+    "recording_date": null,
+    "license_url": null,
+    "license_notes": "Verify edition-specific text/audio and third-party restrictions"
+  },
+  "study": {
+    "mode": "understanding",
+    "cefr_estimate": "B2-C1",
+    "topic": "European history",
+    "key_terms": [],
+    "objectives": [],
+    "questions": []
+  },
+  "media": {
+    "status": "unverified",
+    "origin": "official",
+    "download_url": null,
+    "local_path": null,
+    "content_type": null,
+    "duration_seconds": null,
+    "sha256": null,
+    "decoded_ok": false,
+    "playback_verified": false
+  },
+  "transcript": {
+    "status": "unverified",
+    "url": null,
+    "local_path": null,
+    "provenance": null,
+    "matching_audio": false,
+    "processed": false
+  },
+  "rights": {
+    "personal_download": "unverified",
+    "app_bundle_distribution": "unverified",
+    "public_git_commit": false
+  },
+  "alignment": {
+    "status": "not_started",
+    "segments_count": 0,
+    "all_spans_valid": false
+  },
+  "integration": {
+    "catalog_status": "indexed",
+    "app_verified": false
+  }
+}
