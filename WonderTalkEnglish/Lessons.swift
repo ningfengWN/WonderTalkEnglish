@@ -162,11 +162,19 @@ final class CourseStore: ObservableObject {
     }
 
     private func bundledLessons() -> [Lesson] {
-        var urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Lessons") ?? []
-        if urls.isEmpty {
-            for name in ["learning_catalog_v1"] {
-                if let url = Bundle.main.url(forResource: name, withExtension: "json") {
+        // Xcode 27 can preserve synchronized folder hierarchy, whereas
+        // older targets flatten resources into the bundle root. Search both.
+        let folders: [String?] = ["Lessons", "WonderTalkEnglish/Lessons", nil]
+        let names = ["learning_catalog_v1"]
+        var urls: [URL] = []
+        for name in names {
+            for folder in folders {
+                if let url = Bundle.main.url(forResource: name,
+                                             withExtension: "json",
+                                             subdirectory: folder),
+                   !urls.contains(url) {
                     urls.append(url)
+                    break
                 }
             }
         }
@@ -207,7 +215,7 @@ final class CourseStore: ObservableObject {
                         }
                     }
                 }
-                if let duration = item.durationSeconds, duration > 0 {
+                if let duration = item.durationSeconds, duration.isFinite, duration > 0 {
                     lesson.durationSeconds = duration
                 }
                 if let stem = item.bundledAudioStem, !stem.isEmpty {
