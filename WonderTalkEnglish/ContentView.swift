@@ -48,6 +48,9 @@ struct ContentView: View {
     @State private var showTranscriptImport = false
     @State private var showAlignment = false
     @State private var importingAudio = false
+    @State private var importingLocalBundle = false
+    @State private var showLocalBundleOptions = false
+    @State private var overwriteLocalBundle = false
     @State private var alertText: String?
 
     private let blue = Color(red: 0.07, green: 0.39, blue: 0.96)
@@ -147,6 +150,35 @@ struct ContentView: View {
         .sheet(isPresented: $showAlignment) {
             if let lesson {
                 AlignmentView(lessonID: lesson.id, courses: courses, audio: audio)
+            }
+        }
+        .confirmationDialog("批量导入本地课程资料", isPresented: $showLocalBundleOptions,
+                            titleVisibility: .visible) {
+            Button("仅填补缺失的字幕和音频（推荐）") {
+                overwriteLocalBundle = false
+                importingLocalBundle = true
+            }
+            Button("覆盖已有字幕和音频", role: .destructive) {
+                overwriteLocalBundle = true
+                importingLocalBundle = true
+            }
+        } message: {
+            Text("资料包只在本机导入；根据课程 ID 和来源网址核对。默认不会覆盖已有的字幕、时间戳或音频。")
+        }
+        .fileImporter(isPresented: $importingLocalBundle, allowedContentTypes: [.json]) { result in
+            switch result {
+            case .success(let url):
+                audio.stopAll()
+                do {
+                    let summary = try courses.importLocalStudyBundle(
+                        from: url, overwriteExisting: overwriteLocalBundle)
+                    resetLesson()
+                    alertText = summary.message
+                } catch {
+                    alertText = "资料包导入失败：\(error.localizedDescription)"
+                }
+            case .failure(let error):
+                alertText = "选择资料包失败：\(error.localizedDescription)"
             }
         }
         .fileImporter(isPresented: $importingAudio, allowedContentTypes: [.audio]) { result in
@@ -333,6 +365,9 @@ struct ContentView: View {
                     }
                 }
                 Section("课程管理") {
+                    Button("批量导入本地课程资料包（字幕 + 音频）", systemImage: "square.stack.3d.up") {
+                        showLocalBundleOptions = true
+                    }
                     Button("新建课程（粘贴逐句原文）", systemImage: "plus") {
                         showNewLesson = true
                     }
