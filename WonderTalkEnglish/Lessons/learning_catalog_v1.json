@@ -560,41 +560,6 @@
     "catalogVersion": 2
   },
   {
-    "id": "e17",
-    "category": "DAILY · SPEAKING",
-    "title": "Best and Worst Part of Your Job",
-    "subtitle": "职业经历",
-    "sourceName": "ELLLO",
-    "sourceURL": "https://www.elllo.org/video/0651/662-Ulices-Best-Part-Job.htm",
-    "rightsNote": "外部学习资料索引；未附带原始音频或逐字稿。请到来源网站学习；导入音频和逐字稿前先确认相应使用许可。",
-    "level": "B1",
-    "topic": "职业经历",
-    "studyMode": "speaking",
-    "materialStatus": "external_link_only",
-    "audioFilename": null,
-    "bundledAudioStem": null,
-    "lines": [],
-    "studyGuide": {
-      "goal": "能够在真实生活中围绕「职业经历」听懂提问并自然回应。",
-      "steps": [
-        "首次盲听并复述大意",
-        "对照原站文字稿查漏",
-        "定位难句并跟读",
-        "录音比较句子节奏",
-        "使用同主题问题自由对话"
-      ],
-      "comprehensionPrompts": [
-        "这段材料围绕「职业经历」发生了什么？",
-        "说话者提出了哪些问题、回应或选择？",
-        "如果换成你自己的经历，你会怎样用英语回应？"
-      ],
-      "transcriptStatus": "not_bundled",
-      "audioStatus": "not_bundled"
-    },
-    "licensePolicy": "elllo_noncommercial_educational_check",
-    "catalogVersion": 2
-  },
-  {
     "id": "e18",
     "category": "DAILY · SPEAKING",
     "title": "Do You Travel a Lot?",
