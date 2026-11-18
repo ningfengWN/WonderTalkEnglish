@@ -23,6 +23,10 @@ private enum StudyStep: Int, CaseIterable {
     }
 }
 
+private enum CourseScreen {
+    case library, detail, study
+}
+
 struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -33,7 +37,8 @@ struct ContentView: View {
 
     // Family profiles are retained; only the adult learning flow is being developed.
     @AppStorage("wt.family.activeProfile") private var activeProfile = "adult"
-    @State private var lessonID = "rates"
+    @State private var lessonID = "e01"
+    @State private var screen: CourseScreen = .library
     @State private var completed = ""
     @State private var abilityLevel = 1
     @State private var sessionCount = 0
@@ -61,37 +66,58 @@ struct ContentView: View {
     }
 
     var body: some View {
-        // Keep interactive content inside the system safe area. Only the
-        // background extends behind the iPhone X notch and Home Indicator.
-        VStack(spacing: compactPhone ? 8 : 14) {
+        Group {
+            if screen == .library {
+                CourseLibraryView(
+                    courses: courses,
+                    onSource: { item in
+                        lessonID = item.id
+                        screen = .detail
+                    },
+                    onStudy: { item in
+                        lessonID = item.id
+                        step = .listen
+                        screen = .study
+                    },
+                    onImport: { showLocalBundleOptions = true },
+                    onCreate: { showNewLesson = true },
+                    onAccount: { showAccount = true }
+                )
+            } else {
+                VStack(spacing: compactPhone ? 8 : 14) {
                     header
-                    if !(lesson?.lines.isEmpty ?? true) { stepsBar }
+                    if screen == .study, let lesson, !lesson.isKnowledgeEnglish,
+                       !lesson.lines.isEmpty {
+                        stepsBar
+                    }
                     Group {
                         if let lesson {
-                            if lesson.lines.isEmpty {
+                            if screen == .detail || lesson.isKnowledgeEnglish || lesson.lines.isEmpty {
                                 catalogPage(lesson)
                             } else {
-                            switch step {
-                            case .listen: listenPage(lesson)
-                            case .read: readPage(lesson)
-                            case .shadow: shadowPage(lesson)
-                            case .finish: finishPage(lesson)
-                            }
+                                switch step {
+                                case .listen: listenPage(lesson)
+                                case .read: readPage(lesson)
+                                case .shadow: shadowPage(lesson)
+                                case .finish: finishPage(lesson)
+                                }
                             }
                         } else {
                             ContentUnavailableView("尚无课程", systemImage: "books.vertical",
-                                                   description: Text("请检查 Lessons 文件夹，或新建一节课程。"))
+                                description: Text("请返回课程库选择课程。"))
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.white, in: RoundedRectangle(cornerRadius: 26))
                     .padding(.horizontal, compactPhone ? 8 : 12)
                     .padding(.bottom, compactPhone ? 6 : 10)
+                }
+                .frame(maxWidth: 800)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .safeAreaPadding(.top, compactPhone ? 12 : 8)
+                .background { blue.ignoresSafeArea() }
+            }
         }
-        .frame(maxWidth: 800)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .safeAreaPadding(.top, compactPhone ? 12 : 8)
-        .background { blue.ignoresSafeArea() }
         .preferredColorScheme(.light)
         .onAppear { loadProfile() }
         .sheet(isPresented: $showAccount) { accountSheet }
@@ -135,6 +161,7 @@ struct ContentView: View {
                     lessonID = id
                     resetLesson()
                     showNewLesson = false
+                    screen = .study
                 }
             }
         }
@@ -229,21 +256,21 @@ struct ContentView: View {
         let defaults = UserDefaults.standard
         // Preserve existing family-profile progress and older adult V3 data.
         if activeProfile == "adult" && !defaults.bool(forKey: "wt.family.migrated.v3") {
-            defaults.set(defaults.string(forKey: "wt.v3.lesson") ?? "rates", forKey: storageKey("lesson"))
+            defaults.set(defaults.string(forKey: "wt.v3.lesson") ?? "e01", forKey: storageKey("lesson"))
             defaults.set(defaults.string(forKey: "wt.v3.completed") ?? "", forKey: storageKey("completed"))
             defaults.set(true, forKey: "wt.family.migrated.v3")
         }
         let saved = defaults.string(forKey: storageKey("lesson")) ??
                     (activeProfile == "adult" ? defaults.string(forKey: "wt.v4.selectedLesson") : nil) ??
-                    "rates"
-        lessonID = courses.lesson(saved) != nil ? saved : (courses.lessons.first?.id ?? "rates")
+                    "e01"
+        lessonID = courses.lesson(saved) != nil ? saved : (courses.lessons.first?.id ?? "e01")
         completed = defaults.string(forKey: storageKey("completed")) ??
                     (activeProfile == "adult" ? defaults.string(forKey: "wt.v4.completed") : nil) ??
                     ""
-        // e17 has been retired from the catalog; remove stale completion IDs
-        // from local profile counters without touching other lesson progress.
+        // Retired courses must not reappear in the local progress counters.
+        let retired: Set<String> = ["e17", "e20", "rates", "renaissance"]
         let filteredCompleted = completed.split(separator: ",")
-            .map(String.init).filter { $0 != "e17" }.joined(separator: ",")
+            .map(String.init).filter { !retired.contains($0) }.joined(separator: ",")
         if filteredCompleted != completed {
             completed = filteredCompleted
             defaults.set(completed, forKey: storageKey("completed"))
@@ -264,6 +291,7 @@ struct ContentView: View {
         saveProfile()
         activeProfile = profile
         showAccount = false
+        screen = .library
     }
 
     private var accountSheet: some View {
@@ -316,15 +344,23 @@ struct ContentView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(systemName: "waveform.circle.fill")
-                .font(.title)
-                .foregroundStyle(yellow)
+            Button {
+                audio.stopAll()
+                screen = .library
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .padding(10)
+                    .background(.white.opacity(0.18), in: Circle())
+            }
+            .accessibilityLabel("返回课程库")
+
             VStack(alignment: .leading, spacing: 3) {
-                Text("WONDERTALK ENGLISH · V4")
+                Text(screen == .detail ? "课程详情" : "日常英语 · 听说训练")
                     .font(.caption2.bold())
-                    .tracking(1.0)
                     .foregroundStyle(.white.opacity(0.8))
-                Text(lesson?.title ?? "Course Library")
+                Text(lesson?.title ?? "WonderTalk English")
                     .font(.headline)
                     .foregroundStyle(.white)
                     .lineLimit(1)
@@ -339,44 +375,14 @@ struct ContentView: View {
             }
             .accessibilityLabel("我的学习账号")
             Menu {
-                Section("原有课程 / 自建课程") {
-                    ForEach(courses.lessons.filter { item in
-                        !["e","f","n","p","h"].contains(String(item.id.prefix(1))) ||
-                        item.id.count != 3
-                    }) { item in
-                        Button(item.title) { lessonID = item.id }
-                    }
-                }
-                Section("日常口语 · 20") {
-                    ForEach(courses.lessons.filter { $0.category == "DAILY · SPEAKING" }) { item in
-                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
-                    }
-                }
-                Section("亲子英语 · 7") {
-                    ForEach(courses.lessons.filter { $0.category == "FAMILY · SPEAKING" }) { item in
-                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
-                    }
-                }
-                Section("财经新闻 · 5") {
-                    ForEach(courses.lessons.filter { $0.category == "FINANCE · UNDERSTANDING" }) { item in
-                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
-                    }
-                }
-                Section("财报与美联储 · 5") {
-                    ForEach(courses.lessons.filter { $0.category == "EARNINGS/FED · UNDERSTANDING" }) { item in
-                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
-                    }
-                }
-                Section("欧洲历史 · 3") {
-                    ForEach(courses.lessons.filter { $0.category == "HISTORY · UNDERSTANDING" }) { item in
-                        Button("\(item.id.uppercased()) · \(item.title)") { lessonID = item.id }
-                    }
-                }
                 Section("课程管理") {
-                    Button("批量导入本地课程资料包（字幕 + 音频）", systemImage: "square.stack.3d.up") {
+                    Button("返回课程库", systemImage: "books.vertical") {
+                        screen = .library
+                    }
+                    Button("批量导入本地课程资料包", systemImage: "square.stack.3d.up") {
                         showLocalBundleOptions = true
                     }
-                    Button("新建课程（粘贴逐句原文）", systemImage: "plus") {
+                    Button("新建课程", systemImage: "plus") {
                         showNewLesson = true
                     }
                     Button("为当前课程导入 MP3 / M4A", systemImage: "square.and.arrow.down") {
@@ -387,19 +393,20 @@ struct ContentView: View {
                             showTranscriptImport = true
                         }
                     }
-                    if let lesson, !lesson.lines.isEmpty {
+                    if let lesson, !lesson.lines.isEmpty, !lesson.isKnowledgeEnglish {
                         Button("自动 / 手动逐句对齐", systemImage: "waveform.path") {
                             showAlignment = true
                         }
                     }
                 }
             } label: {
-                Image(systemName: "books.vertical.fill")
+                Image(systemName: "ellipsis.circle.fill")
                     .foregroundStyle(.white)
-                    .padding(10)
+                    .font(.title2)
+                    .padding(8)
                     .background(.white.opacity(0.18), in: Circle())
             }
-            .accessibilityLabel("课程库与导入")
+            .accessibilityLabel("课程管理")
         }
         .padding(.horizontal, 18)
         .padding(.top, 4)
@@ -453,7 +460,9 @@ struct ContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                Text(lesson.audioFilename == nil ? "当前是外部资料索引，未附带音频和逐字稿。请先通过原网站学习。" : "已导入本地音频，但尚无逐句原文；导入文字后可进入播放器与跟读训练。")
+                Text(lesson.lines.isEmpty
+                    ? "本课程暂无逐句英文原文，可打开来源网站学习或导入资料。"
+                    : "已收录 \(lesson.lines.count) 句英文原文；\(lesson.audioFilename != nil || lesson.bundledAudioStem != nil ? "已关联音频" : "尚未关联音频")。")
                     .font(.subheadline)
                 Text(lesson.studyMode == "speaking"
                     ? "建议：原站泛听 → 阅读原站文字稿 → 精听 → 跟读 → 日常复述和互动。"
@@ -482,6 +491,16 @@ struct ContentView: View {
                     importingAudio = true
                 }
                 .buttonStyle(.bordered)
+                if !lesson.isKnowledgeEnglish {
+                    Button {
+                        step = .listen
+                        screen = .study
+                    } label: {
+                        Label("进入听力、阅读和跟读训练", systemImage: "play.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
                 sourceLine(lesson)
             }
             .padding(compactPhone ? 16 : 22)
