@@ -1,0 +1,35 @@
+name: Enhance original WonderTalk AppIcon
+
+on:
+  push:
+    paths:
+      - 'tools/enhance_app_icon.py'
+      - '.github/workflows/enhance-original-app-icon.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  enhance-icon:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history (required for original icon)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Install Pillow
+        run: python3 -m pip install --user Pillow
+      - name: Sharpen original 1024px icon
+        run: python3 tools/enhance_app_icon.py
+      - name: Commit enhanced asset to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add WonderTalkEnglish/Assets.xcassets/AppIcon.appiconset/WonderTalkCrayonBunnyPanda.png
+          if ! git diff --cached --quiet; then
+            git commit -m "assets: sharpen original bunny panda icon (1024px)"
+            git push origin HEAD:main
+          fi
