@@ -105,6 +105,25 @@ private struct PrivateCourseMediaItem: Decodable {
     let durationSeconds: Double?
 }
 
+/// Generated offline on the learner's Mac by tools/align_wondertalk.py.
+/// Timings are applied only if the English line text matches exactly.
+private struct PrivateAlignmentManifest: Decodable {
+    let formatVersion: Int
+    let items: [PrivateAlignedLesson]
+}
+
+private struct PrivateAlignedLesson: Decodable {
+    let id: String
+    let sourceURL: String
+    let lines: [PrivateAlignedLine]
+}
+
+private struct PrivateAlignedLine: Decodable {
+    let english: String
+    let start: Double?
+    let end: Double?
+}
+
 @MainActor
 final class CourseStore: ObservableObject {
     private static let removedCatalogIDs: Set<String> = ["e17", "e20", "rates", "renaissance"]
@@ -144,7 +163,21 @@ final class CourseStore: ObservableObject {
                     merged.audioFilename = item.audioFilename
                 }
                 if !item.lines.isEmpty && (item.id != "e02" || original.lines.isEmpty) {
-                    merged.lines = item.lines
+                    // Keep learner's manual timestamps and translations, but
+                    // fill missing timestamps from the bundled WhisperX alignment.
+                    if item.lines.count == original.lines.count &&
+                        zip(item.lines, original.lines).allSatisfy({ $0.0.english == $0.1.english }) {
+                        merged.lines = zip(item.lines, original.lines).map { saved, bundled in
+                            var line = saved
+                            if !line.isAligned && bundled.isAligned {
+                                line.start = bundled.start
+                                line.end = bundled.end
+                            }
+                            return line
+                        }
+                    } else {
+                        merged.lines = item.lines
+                    }
                 }
                 if let duration = original.durationSeconds ?? item.durationSeconds {
                     merged.durationSeconds = duration
@@ -226,6 +259,39 @@ final class CourseStore: ObservableObject {
                                                   subdirectory: "WonderTalkEnglish/Audio") != nil ||
                                  Bundle.main.url(forResource: filename, withExtension: "mp3") != nil
                     if exists { lesson.bundledAudioStem = stem }
+                }
+                byID[item.id] = lesson
+            }
+        }
+        // Import precomputed WhisperX sentence timings. This file is
+        // intentionally private and distributed with local course assets.
+        let alignmentURL = Bundle.main.url(forResource: "private_course_alignment",
+                                           withExtension: "json", subdirectory: "Lessons") ??
+                           Bundle.main.url(forResource: "private_course_alignment",
+                                           withExtension: "json", subdirectory: "WonderTalkEnglish/Lessons") ??
+                           Bundle.main.url(forResource: "private_course_alignment",
+                                           withExtension: "json")
+        if let alignmentURL, let data = try? Data(contentsOf: alignmentURL),
+           let manifest = try? JSONDecoder().decode(PrivateAlignmentManifest.self, from: data),
+           manifest.formatVersion == 1 {
+            for item in manifest.items {
+                guard var lesson = byID[item.id], lesson.sourceURL == item.sourceURL,
+                      lesson.lines.count == item.lines.count,
+                      zip(lesson.lines, item.lines).allSatisfy({ $0.0.english == $0.1.english }) else {
+                    continue
+                }
+                var lastEnd = 0.0
+                for i in lesson.lines.indices {
+                    let proposed = item.lines[i]
+                    guard let start = proposed.start, let end = proposed.end,
+                          start.isFinite, end.isFinite, start >= 0,
+                          end > start, start >= lastEnd - 0.015,
+                          lesson.durationSeconds.map({ end <= $0 + 0.5 }) ?? true else {
+                        continue
+                    }
+                    lesson.lines[i].start = start
+                    lesson.lines[i].end = end
+                    lastEnd = end
                 }
                 byID[item.id] = lesson
             }
