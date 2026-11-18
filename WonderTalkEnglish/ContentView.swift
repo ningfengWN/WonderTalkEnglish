@@ -240,6 +240,14 @@ struct ContentView: View {
         completed = defaults.string(forKey: storageKey("completed")) ??
                     (activeProfile == "adult" ? defaults.string(forKey: "wt.v4.completed") : nil) ??
                     ""
+        // e17 has been retired from the catalog; remove stale completion IDs
+        // from local profile counters without touching other lesson progress.
+        let filteredCompleted = completed.split(separator: ",")
+            .map(String.init).filter { $0 != "e17" }.joined(separator: ",")
+        if filteredCompleted != completed {
+            completed = filteredCompleted
+            defaults.set(completed, forKey: storageKey("completed"))
+        }
         let level = defaults.integer(forKey: storageKey("level"))
         abilityLevel = level == 0 ? (activeProfile == "adult" ? 1 : 2) : min(6, max(1, level))
         sessionCount = defaults.integer(forKey: storageKey("sessions"))
