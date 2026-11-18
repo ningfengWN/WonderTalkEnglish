@@ -80,6 +80,17 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    /// Listen to a proposed sentence interval before accepting its timestamps.
+    func previewAlignment(_ lesson: Lesson, start: Double, end: Double,
+                          mediaDirectory: URL) {
+        guard let url = fullURL(for: lesson, mediaDirectory: mediaDirectory) else {
+            errorMessage = "找不到音频，无法试听自动对齐结果。"
+            return
+        }
+        playClip(url: url, start: start, end: end,
+                 key: "preview_\(lesson.id)", speed: 1)
+    }
+
     private func playClip(url: URL, start: Double, end: Double, key: String, speed: Float) {
         startPlayback(url: url, key: key, speed: speed, seek: start, clipEnd: end)
     }

@@ -190,6 +190,31 @@ final class CourseStore: ObservableObject {
         save()
     }
 
+    /// Apply only reviewed, valid boundaries in one atomic catalog save.
+    /// Unmatched sentences and existing manual edits are preserved by default.
+    @discardableResult
+    func applyAutoAlignment(lessonID: String,
+                            suggestions: [SentenceAlignmentSuggestion],
+                            overwriteExisting: Bool) -> Int {
+        guard let lessonIndex = lessons.firstIndex(where: { $0.id == lessonID }) else {
+            errorMessage = "找不到当前课程，未保存自动对齐结果。"
+            return 0
+        }
+        var applied = 0
+        for suggestion in suggestions {
+            let i = suggestion.index
+            guard lessons[lessonIndex].lines.indices.contains(i),
+                  suggestion.start.isFinite, suggestion.end.isFinite,
+                  suggestion.start >= 0, suggestion.end > suggestion.start else { continue }
+            if !overwriteExisting && lessons[lessonIndex].lines[i].isAligned { continue }
+            lessons[lessonIndex].lines[i].start = suggestion.start
+            lessons[lessonIndex].lines[i].end = suggestion.end
+            applied += 1
+        }
+        if applied > 0 { save() }
+        return applied
+    }
+
     func updateTranslation(lessonID: String, lineIndex: Int, text: String) {
         guard let i = lessons.firstIndex(where: { $0.id == lessonID }),
               lessons[i].lines.indices.contains(lineIndex) else { return }
