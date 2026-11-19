@@ -57,10 +57,15 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 isPlaying = false
             } else {
                 if player.currentTime >= player.duration - 0.05 { player.currentTime = 0 }
-                player.enableRate = true
-                player.rate = speed
-                isPlaying = player.play()
-                startTicker()
+                do {
+                    try configurePlaybackSession()
+                    player.enableRate = true
+                    player.rate = speed
+                    isPlaying = player.play()
+                    startTicker()
+                } catch {
+                    errorMessage = "恢复播放失败：\(error.localizedDescription)"
+                }
             }
         } else {
             playFull(lesson, mediaDirectory: mediaDirectory, speed: speed)
@@ -102,13 +107,20 @@ final class AudioStudio: NSObject, ObservableObject, AVAudioPlayerDelegate {
         startPlayback(url: url, key: key, speed: speed, seek: 0, clipEnd: nil)
     }
 
+    /// Playback uses an output-only audio session so iOS can continue
+    /// playing while the app is backgrounded or the screen is locked.
+    /// Recording switches separately to playAndRecord.
+    private func configurePlaybackSession() throws {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playback, mode: .default, options: [])
+        try session.setActive(true)
+    }
+
     private func startPlayback(url: URL, key: String, speed: Float,
                                seek: Double, clipEnd: Double?) {
         stopPlayback()
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
-            try session.setActive(true)
+            try configurePlaybackSession()
             let newPlayer = try AVAudioPlayer(contentsOf: url)
             newPlayer.delegate = self
             newPlayer.enableRate = true
